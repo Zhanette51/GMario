@@ -1,4 +1,4 @@
-* {
+.controls-info* {
     box-sizing: border-box;
 }
 
@@ -12,6 +12,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    border: 4px solid #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .container {
@@ -38,7 +40,7 @@ h1 {
 }
 
 .controls-info {
-    background: #8B4513;
+     background: #8B4513;
     color: #FFE4C4;
     padding: 10px;
     border-radius: 8px;
@@ -46,6 +48,9 @@ h1 {
     margin-bottom: 15px;
     font-family: 'Press Start 2P', monospace;
     font-size: 0.8em;
+    /* Добавьте эту строку для золотой обводки */
+    border: 4px solid #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .controls-info kbd {
@@ -60,10 +65,13 @@ h1 {
     position: relative;
     margin: 15px auto;
     display: inline-block;
-    border: 6px solid #32CD32;
+    /* Измените эту строку на золотой цвет */
+    border: 6px solid #FFD700;
     border-radius: 6px;
     overflow: hidden;
     background: #5c94fc;
+    /* Добавьте тень для эффекта свечения */
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
 }
 
 #gameCanvas {
@@ -102,7 +110,7 @@ h1 {
 }
 
 .stats-panel {
-    display: flex;
+     display: flex;
     justify-content: space-between;
     align-items: center;
     margin: 15px 0;
@@ -110,6 +118,9 @@ h1 {
     background: #8B4513;
     border-radius: 8px;
     color: white;
+    /* Добавьте эти строки для золотой обводки */
+    border: 4px solid #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .stat {

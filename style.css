@@ -173,3 +173,26 @@ h1 {
     border-top: 2px solid #FF69B4;
     padding-top: 15px;
 }
+
+/* Стили для кнопки музыки */
+.music-button {
+    background: #FF69B4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 0;
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    border: 4px solid #C71585;
+    margin: 10px;
+}
+
+.music-button:hover {
+    background: #FF82AB;
+}
+
+.music-button.playing {
+    background: #8B4513;
+    border-color: #FFD700;
+}

@@ -14,6 +14,47 @@
     </style>
 </head>
 <body>
+    <audio id="backgroundMusic" loop>
+    <source src="music/backgroundMusic.mp3" type="audio/mpeg">
+    Ваш браузер не поддерживает аудио элемент.
+</audio>
+
+<!-- Добавьте этот скрипт для управления автовоспроизведением -->
+<script>
+    // Автовоспроизведение музыки при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const music = document.getElementById('backgroundMusic');
+        if (music) {
+            music.volume = 0.3;
+            
+            // Пытаемся воспроизвести автоматически
+            const playPromise = music.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // Автовоспроизведение заблокировано
+                    console.log("Автовоспроизведение заблокировано. Музыка запустится при взаимодействии.");
+                    
+                    // Создаем кнопку для запуска музыки
+                    const musicButton = document.createElement('button');
+                    musicButton.textContent = '🎵 Включить музыку';
+                    musicButton.className = 'pixel-button';
+                    musicButton.style.margin = '10px';
+                    musicButton.style.background = '#8B4513';
+                    
+                    musicButton.addEventListener('click', function() {
+                        music.play();
+                        musicButton.remove();
+                    });
+                    
+                    // Добавляем кнопку в контейнер
+                    const container = document.querySelector('.container');
+                    container.insertBefore(musicButton, container.firstChild.nextSibling);
+                });
+            }
+        }
+    });
+</script>
     <div class="container">
         <h1>🎉 С Юбилеем! 🎉</h1>
         <p class="subtitle">Помоги Маме-Марио собрать все подарки к празднику!</p>

@@ -3,7 +3,7 @@ const CONFIG = {
     player: {
         startX: 50,
         startY: 250,
-        width: 32, // Стандартный размер спрайта Mario
+        width: 32,
         height: 48,
         speed: 5,
         jumpForce: 15,
@@ -28,16 +28,16 @@ const restartButton = document.getElementById('restartButton');
 
 // Сообщения для принцессы Пич
 const peachMessages = [
-    "С юбилеем, ваше величество! 👑",
-    "Самая прекрасная принцесса! 💖",
-    "Ваша доброта побеждает все! 🏰",
-    "Вы вдохновляете королевство! ✨",
-    "Ваша улыбка - наше солнце! ☀️",
-    "Самая мудрая правительница! 🦉",
-    "Ваши объятия - наш дом! 🏡",
-    "Вы - сердце нашего королевства! ❤️",
+    "С юбилеем! 👑",
+    "Самая прекрасная! 💖",
+    "Ваша доброта побеждает! 🏰",
+    "Вы вдохновляете! ✨",
+    "Ваша улыбка - солнце! ☀️",
+    "Самая мудрая! 🦉",
+    "Ваши объятия - дом! 🏡",
+    "Вы - сердце! ❤️",
     "Ваша сила в доброте! 💪",
-    "Вы самая лучшая принцесса! 🌸"
+    "Вы самая лучшая! 🌸"
 ];
 
 // Объекты для хранения спрайтов
@@ -51,7 +51,6 @@ const sprites = {
         jumpLeft: null
     },
     tiles: {},
-    enemies: {},
     items: {},
     background: {}
 };
@@ -59,500 +58,214 @@ const sprites = {
 // Параметры анимации
 let animationFrame = 0;
 let walkAnimationCounter = 0;
-const WALK_ANIMATION_SPEED = 8; // Чем меньше, тем быстрее анимация
+const WALK_ANIMATION_SPEED = 8;
 
-// Функция загрузки всех спрайтов
-function loadSprites() {
-    // Создаем базовые спрайты в стиле Super Mario
-    loadingElement.textContent = "Создаём королевство...";
-    
-    // 1. Создаем принцессу Пич (пиксельный стиль Super Mario)
-    createPeachSprites();
-    
-    // 2. Создаем блоки и платформы
-    createTileSprites();
-    
-    // 3. Создаем предметы
-    createItemSprites();
-    
-    // 4. Создаем фоновые элементы
-    createBackgroundSprites();
-    
-    setTimeout(() => {
-        loadingElement.style.display = 'none';
-        initGame();
-    }, 1500);
-}
-
-function createPeachSprites() {
-    // Цвета принцессы Пич
-    const peachColors = {
-        dress: '#FF69B4',      // Розовое платье
-        skin: '#FFE4C4',       // Телесный цвет
-        hair: '#FFD700',       // Золотистые волосы
-        crown: '#FFDF00',      // Корона
-        details: '#FF1493'     // Акценты
-    };
-
-    // Стоящая вправо
-    sprites.peach.standRight = createMarioStyleSprite(32, 48, peachColors, 'peach_stand');
-    
-    // Стоящая влево (зеркало)
-    sprites.peach.standLeft = createMirroredSprite(sprites.peach.standRight);
-    
-    // Анимация ходьбы вправо (3 кадра)
-    for (let i = 0; i < 3; i++) {
-        sprites.peach.walkRight.push(createMarioStyleSprite(32, 48, peachColors, `peach_walk_${i}`));
-        sprites.peach.walkLeft.push(createMirroredSprite(sprites.peach.walkRight[i]));
-    }
-    
-    // Прыжок
-    sprites.peach.jumpRight = createMarioStyleSprite(32, 48, peachColors, 'peach_jump');
-    sprites.peach.jumpLeft = createMirroredSprite(sprites.peach.jumpRight);
-}
-
-function createMarioStyleSprite(width, height, colors, type) {
+// Упрощенная функция создания спрайтов
+function createSimpleSprite(width, height, color, type) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     
-    // Очищаем с прозрачностью
     ctx.clearRect(0, 0, width, height);
     
-    // Пиксельный стиль Super Mario
-    const pixelSize = 4; // Размер "пикселя" для стиля
+    switch(type) {
+        case 'peach_stand':
+            // Упрощенная Пич
+            ctx.fillStyle = '#FF69B4';
+            ctx.fillRect(10, 20, 12, 28); // Платье
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(6, 0, 20, 8); // Волосы
+            
+            ctx.fillStyle = '#FFE4C4';
+            ctx.fillRect(10, 8, 12, 12); // Лицо
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(12, 12, 2, 2); // Глаз левый
+            ctx.fillRect(18, 12, 2, 2); // Глаз правый
+            
+            ctx.fillStyle = '#FF1493';
+            ctx.fillRect(14, 16, 4, 2); // Рот
+            break;
+            
+        case 'brick':
+            // Кирпичный блок
+            ctx.fillStyle = '#C04000';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.fillStyle = '#8B0000';
+            // Вертикальные линии
+            for (let x = 4; x < width; x += 8) {
+                ctx.fillRect(x, 0, 2, height);
+            }
+            break;
+            
+        case 'question':
+            // Вопросительный блок
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.fillStyle = '#B8860B';
+            ctx.fillRect(0, 0, width, 4);
+            ctx.fillRect(0, 0, 4, height);
+            ctx.fillRect(width-4, 0, 4, height);
+            ctx.fillRect(0, height-4, width, 4);
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', width/2, height/2);
+            break;
+            
+        case 'coin':
+            // Монета
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(width/2, height/2, width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#B8860B';
+            ctx.beginPath();
+            ctx.arc(width/2, height/2, width/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('P', width/2, height/2);
+            break;
+            
+        case 'flower':
+            // Цветок
+            ctx.fillStyle = '#32CD32';
+            ctx.fillRect(width/2 - 2, height/2, 4, height/2); // Стебель
+            
+            ctx.fillStyle = '#FF69B4';
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(
+                    width/2 + Math.cos(i * Math.PI/2) * 8,
+                    height/2 + Math.sin(i * Math.PI/2) * 8,
+                    6, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+            break;
+            
+        case 'flag':
+            // Флаг
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(width/2 - 3, 0, 6, height); // Флагшток
+            
+            ctx.fillStyle = '#FF69B4';
+            ctx.fillRect(width/2, 30, 20, 15); // Флаг
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(width/2 + 20, 30);
+            ctx.lineTo(width/2 + 30, 35);
+            ctx.lineTo(width/2 + 20, 45);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        default:
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, width, height);
+    }
     
-    if (type.includes('peach')) {
-        // Голова и волосы
-        drawPixelArea(ctx, 8, 0, 16, 8, colors.hair, pixelSize); // Волосы сверху
-        drawPixelArea(ctx, 12, 8, 8, 8, colors.skin, pixelSize); // Лицо
+    return canvas;
+}
+
+// Функция загрузки спрайтов с прогрессом
+function loadSprites() {
+    let loadedCount = 0;
+    const totalSprites = 12;
+    
+    function updateProgress() {
+        loadedCount++;
+        const percent = Math.round((loadedCount / totalSprites) * 100);
+        loadingElement.textContent = `Создаём королевство... ${percent}%`;
         
-        // Глаза
-        drawPixel(ctx, 14, 12, '#000000', pixelSize);
-        drawPixel(ctx, 18, 12, '#000000', pixelSize);
-        
-        // Улыбка
-        drawPixel(ctx, 16, 16, colors.details, pixelSize);
-        
-        // Корона
-        drawPixelArea(ctx, 12, 0, 8, 4, colors.crown, pixelSize);
-        drawPixel(ctx, 10, 2, colors.crown, pixelSize);
-        drawPixel(ctx, 22, 2, colors.crown, pixelSize);
-        
-        // Платье
-        drawPixelArea(ctx, 8, 16, 16, 24, colors.dress, pixelSize);
-        
-        // Руки
-        drawPixelArea(ctx, 4, 20, 4, 8, colors.skin, pixelSize);
-        drawPixelArea(ctx, 24, 20, 4, 8, colors.skin, pixelSize);
-        
-        // Детали платья
-        drawPixelArea(ctx, 12, 24, 8, 4, colors.details, pixelSize); // Пояс
-        drawPixelArea(ctx, 12, 32, 8, 4, colors.details, pixelSize); // Юбка
-        
-        // Ноги
-        drawPixelArea(ctx, 12, 40, 4, 8, '#8B4513', pixelSize); // Левый ботинок
-        drawPixelArea(ctx, 16, 40, 4, 8, '#8B4513', pixelSize); // Правый ботинок
-        
-        // Анимация ходьбы
-        if (type.includes('walk_1')) {
-            drawPixelArea(ctx, 12, 44, 4, 4, colors.skin, pixelSize); // Видна часть ноги
-        } else if (type.includes('walk_2')) {
-            drawPixelArea(ctx, 16, 44, 4, 4, colors.skin, pixelSize); // Другая нога
+        if (loadedCount === totalSprites) {
+            setTimeout(() => {
+                loadingElement.style.display = 'none';
+                initGame();
+            }, 100);
         }
+    }
+    
+    // Создаем спрайты асинхронно
+    setTimeout(() => {
+        // Принцесса Пич
+        sprites.peach.standRight = createSimpleSprite(32, 48, '#FF69B4', 'peach_stand');
+        updateProgress();
         
-        // Прыжок - поднятые руки
-        if (type.includes('jump')) {
-            drawPixelArea(ctx, 4, 12, 4, 8, colors.skin, pixelSize);
-            drawPixelArea(ctx, 24, 12, 4, 8, colors.skin, pixelSize);
-        }
-    }
-    
-    return canvas;
-}
-
-function createTileSprites() {
-    // Блок земли (как в Super Mario)
-    sprites.tiles.ground = createBlockSprite(32, 32, '#8B4513', 'ground');
-    
-    // Кирпичный блок
-    sprites.tiles.brick = createBlockSprite(32, 32, '#C04000', 'brick');
-    
-    // Вопросительный блок
-    sprites.tiles.question = createQuestionBlock();
-    
-    // Труба
-    sprites.tiles.pipe = createPipeSprite();
-}
-
-function createBlockSprite(width, height, baseColor, type) {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    
-    // Основной цвет
-    ctx.fillStyle = baseColor;
-    ctx.fillRect(0, 0, width, height);
-    
-    // Текстура в пиксельном стиле
-    ctx.fillStyle = darkenColor(baseColor, 30);
-    
-    // Вертикальные линии
-    for (let x = 0; x < width; x += 4) {
-        ctx.fillRect(x, 0, 2, height);
-    }
-    
-    // Горизонтальные линии
-    for (let y = 0; y < height; y += 4) {
-        ctx.fillRect(0, y, width, 2);
-    }
-    
-    // Светлые пиксели для объема
-    ctx.fillStyle = lightenColor(baseColor, 20);
-    for (let x = 2; x < width; x += 8) {
-        for (let y = 2; y < height; y += 8) {
-            ctx.fillRect(x, y, 2, 2);
-        }
-    }
-    
-    return canvas;
-}
-
-function createQuestionBlock() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    
-    // Основной цвет - желтый
-    ctx.fillStyle = '#FFD700';
-    ctx.fillRect(0, 0, 32, 32);
-    
-    // Темные границы
-    ctx.fillStyle = '#B8860B';
-    ctx.fillRect(0, 0, 32, 4); // Верх
-    ctx.fillRect(0, 28, 32, 4); // Низ
-    ctx.fillRect(0, 0, 4, 32); // Лево
-    ctx.fillRect(28, 0, 4, 32); // Право
-    
-    // Вопросительный знак
-    ctx.fillStyle = '#8B4513';
-    // Точка
-    ctx.fillRect(14, 10, 4, 4);
-    // Палочка
-    ctx.fillRect(14, 16, 4, 8);
-    // Верхняя часть
-    ctx.fillRect(10, 6, 12, 4);
-    ctx.fillRect(18, 10, 4, 4);
-    
-    // Блики
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.fillRect(4, 4, 4, 4);
-    ctx.fillRect(24, 4, 4, 4);
-    
-    return canvas;
-}
-
-function createPipeSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    
-    // Зеленая труба в стиле Mario
-    ctx.fillStyle = '#228B22';
-    ctx.fillRect(0, 0, 64, 64);
-    
-    // Темно-зеленые полосы
-    ctx.fillStyle = '#006400';
-    for (let y = 0; y < 64; y += 16) {
-        ctx.fillRect(0, y, 64, 8);
-    }
-    
-    // Светлые блики
-    ctx.fillStyle = '#32CD32';
-    ctx.fillRect(4, 4, 56, 4);
-    ctx.fillRect(4, 20, 56, 4);
-    ctx.fillRect(4, 36, 56, 4);
-    ctx.fillRect(4, 52, 56, 4);
-    
-    return canvas;
-}
-
-function createItemSprites() {
-    // Цветок (как в Mario, но розовый для Пич)
-    sprites.items.flower = createFlowerSprite();
-    
-    // Звезда
-    sprites.items.star = createStarSprite();
-    
-    // Монета (подарок)
-    sprites.items.coin = createCoinSprite();
-    
-    // Флаг
-    sprites.items.flag = createFlagSprite();
-}
-
-function createFlowerSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    
-    // Стебель
-    ctx.fillStyle = '#32CD32';
-    ctx.fillRect(14, 16, 4, 12);
-    
-    // Листья
-    ctx.beginPath();
-    ctx.ellipse(10, 20, 6, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(22, 20, 6, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Цветок (розовый для Пич)
-    ctx.fillStyle = '#FF69B4';
-    for (let i = 0; i < 4; i++) {
-        const angle = (i * Math.PI) / 2;
-        ctx.beginPath();
-        ctx.ellipse(
-            16 + Math.cos(angle) * 6,
-            12 + Math.sin(angle) * 6,
-            6, 6, 0, 0, Math.PI * 2
-        );
-        ctx.fill();
-    }
-    
-    // Центр цветка
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.arc(16, 12, 4, 0, Math.PI * 2);
-    ctx.fill();
-    
-    return canvas;
-}
-
-function createStarSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#FFD700';
-    
-    // Рисуем звезду
-    ctx.beginPath();
-    for (let i = 0; i < 5; i++) {
-        const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-        const radius = i % 2 === 0 ? 12 : 6;
-        const x = 16 + Math.cos(angle) * radius;
-        const y = 16 + Math.sin(angle) * radius;
+        sprites.peach.standLeft = createMirroredSprite(sprites.peach.standRight);
+        updateProgress();
         
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fill();
-    
-    // Блики
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.arc(10, 10, 2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    return canvas;
-}
-
-function createCoinSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 24;
-    canvas.height = 24;
-    const ctx = canvas.getContext('2d');
-    
-    // Золотая монета
-    const gradient = ctx.createRadialGradient(12, 12, 0, 12, 12, 12);
-    gradient.addColorStop(0, '#FFD700');
-    gradient.addColorStop(1, '#B8860B');
-    
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(12, 12, 10, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Обводка
-    ctx.strokeStyle = '#8B4513';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Блик
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.beginPath();
-    ctx.arc(8, 8, 4, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Буква P (Peach)
-    ctx.fillStyle = '#8B4513';
-    ctx.font = 'bold 10px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('P', 12, 12);
-    
-    return canvas;
-}
-
-function createFlagSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 150;
-    const ctx = canvas.getContext('2d');
-    
-    // Флагшток
-    ctx.fillStyle = '#8B4513';
-    ctx.fillRect(18, 0, 4, 150);
-    
-    // Основание
-    ctx.fillRect(10, 140, 20, 10);
-    
-    // Флаг (розовый для Пич)
-    ctx.fillStyle = '#FF69B4';
-    ctx.beginPath();
-    ctx.moveTo(22, 30);
-    ctx.lineTo(40, 20);
-    ctx.lineTo(22, 50);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Корона на флаге
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.moveTo(30, 22);
-    ctx.lineTo(33, 28);
-    ctx.lineTo(38, 28);
-    ctx.lineTo(34, 32);
-    ctx.lineTo(36, 38);
-    ctx.lineTo(30, 34);
-    ctx.lineTo(24, 38);
-    ctx.lineTo(26, 32);
-    ctx.lineTo(22, 28);
-    ctx.lineTo(27, 28);
-    ctx.closePath();
-    ctx.fill();
-    
-    return canvas;
-}
-
-function createBackgroundSprites() {
-    // Облака в стиле Mario
-    sprites.background.cloud = createMarioCloud();
-    
-    // Кусты
-    sprites.background.bush = createMarioBush();
-    
-    // Горы
-    sprites.background.mountain = createMountain();
-}
-
-function createMarioCloud() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 96;
-    canvas.height = 48;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#FFFFFF';
-    
-    // Основные части облака (как в Super Mario)
-    ctx.beginPath();
-    ctx.ellipse(30, 30, 20, 15, 0, 0, Math.PI * 2);
-    ctx.ellipse(60, 25, 25, 18, 0, 0, Math.PI * 2);
-    ctx.ellipse(90, 30, 20, 15, 0, 0, Math.PI * 2);
-    ctx.ellipse(48, 18, 22, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Тень
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-    ctx.beginPath();
-    ctx.ellipse(30, 32, 20, 15, 0, 0, Math.PI * 2);
-    ctx.ellipse(60, 27, 25, 18, 0, 0, Math.PI * 2);
-    ctx.ellipse(90, 32, 20, 15, 0, 0, Math.PI * 2);
-    ctx.ellipse(48, 20, 22, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    return canvas;
-}
-
-function createMarioBush() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 80;
-    canvas.height = 48;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#228B22';
-    
-    // Куст из нескольких шаров (как в Mario)
-    ctx.beginPath();
-    ctx.arc(20, 35, 15, 0, Math.PI * 2);
-    ctx.arc(40, 25, 18, 0, Math.PI * 2);
-    ctx.arc(60, 35, 15, 0, Math.PI * 2);
-    ctx.arc(50, 40, 12, 0, Math.PI * 2);
-    ctx.arc(30, 40, 12, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Более темные участки для объема
-    ctx.fillStyle = '#006400';
-    ctx.beginPath();
-    ctx.arc(15, 32, 8, 0, Math.PI * 2);
-    ctx.arc(35, 22, 10, 0, Math.PI * 2);
-    ctx.fill();
-    
-    return canvas;
-}
-
-function createMountain() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 120;
-    canvas.height = 80;
-    const ctx = canvas.getContext('2d');
-    
-    // Гора с снежной вершиной
-    const gradient = ctx.createLinearGradient(0, 80, 0, 0);
-    gradient.addColorStop(0, '#8B4513');
-    gradient.addPathStop(0.7, '#A0522D');
-    gradient.addColorStop(1, '#DEB887');
-    
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.moveTo(0, 80);
-    ctx.lineTo(60, 0);
-    ctx.lineTo(120, 80);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Снежная вершина
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.moveTo(40, 20);
-    ctx.lineTo(60, 0);
-    ctx.lineTo(80, 20);
-    ctx.lineTo(70, 30);
-    ctx.lineTo(50, 30);
-    ctx.closePath();
-    ctx.fill();
-    
-    return canvas;
-}
-
-// Вспомогательные функции
-function drawPixel(ctx, x, y, color, size = 4) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * size, y * size, size, size);
-}
-
-function drawPixelArea(ctx, x, y, w, h, color, size = 4) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * size, y * size, w * size, h * size);
+        // Создаем только 2 кадра анимации вместо 3
+        sprites.peach.walkRight.push(createSimpleSprite(32, 48, '#FF69B4', 'peach_stand'));
+        updateProgress();
+        sprites.peach.walkRight.push(createSimpleSprite(32, 48, '#FF69B4', 'peach_stand'));
+        updateProgress();
+        
+        sprites.peach.walkLeft.push(createMirroredSprite(sprites.peach.walkRight[0]));
+        updateProgress();
+        sprites.peach.walkLeft.push(createMirroredSprite(sprites.peach.walkRight[1]));
+        updateProgress();
+        
+        sprites.peach.jumpRight = createSimpleSprite(32, 48, '#FF69B4', 'peach_stand');
+        updateProgress();
+        sprites.peach.jumpLeft = createMirroredSprite(sprites.peach.jumpRight);
+        updateProgress();
+        
+        // Блоки
+        sprites.tiles.ground = createSimpleSprite(32, 32, '#8B4513', 'brick');
+        updateProgress();
+        sprites.tiles.brick = createSimpleSprite(32, 32, '#C04000', 'brick');
+        updateProgress();
+        sprites.tiles.question = createSimpleSprite(32, 32, '#FFD700', 'question');
+        updateProgress();
+        
+        // Предметы
+        sprites.items.coin = createSimpleSprite(24, 24, '#FFD700', 'coin');
+        updateProgress();
+        sprites.items.flower = createSimpleSprite(32, 32, '#FF69B4', 'flower');
+        updateProgress();
+        sprites.items.star = createSimpleSprite(32, 32, '#FFD700', 'coin');
+        updateProgress();
+        sprites.items.flag = createSimpleSprite(40, 150, '#FF69B4', 'flag');
+        updateProgress();
+        
+        // Фон (простой спрайт для облака)
+        const cloudCanvas = document.createElement('canvas');
+        cloudCanvas.width = 80;
+        cloudCanvas.height = 40;
+        const cloudCtx = cloudCanvas.getContext('2d');
+        cloudCtx.fillStyle = '#FFFFFF';
+        cloudCtx.beginPath();
+        cloudCtx.arc(40, 20, 20, 0, Math.PI * 2);
+        cloudCtx.fill();
+        sprites.background.cloud = cloudCanvas;
+        updateProgress();
+        
+        // Куст (простой спрайт)
+        const bushCanvas = document.createElement('canvas');
+        bushCanvas.width = 60;
+        bushCanvas.height = 40;
+        const bushCtx = bushCanvas.getContext('2d');
+        bushCtx.fillStyle = '#228B22';
+        bushCtx.beginPath();
+        bushCtx.arc(30, 20, 20, 0, Math.PI * 2);
+        bushCtx.fill();
+        sprites.background.bush = bushCanvas;
+        updateProgress();
+        
+    }, 50);
 }
 
 function createMirroredSprite(originalCanvas) {
@@ -561,30 +274,11 @@ function createMirroredSprite(originalCanvas) {
     canvas.height = originalCanvas.height;
     const ctx = canvas.getContext('2d');
     
-    // Отражаем по горизонтали
     ctx.translate(originalCanvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(originalCanvas, 0, 0);
     
     return canvas;
-}
-
-function darkenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.max((num >> 16) - amt, 0);
-    const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
-    const B = Math.max((num & 0x0000FF) - amt, 0);
-    return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
-}
-
-function lightenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min((num >> 16) + amt, 255);
-    const G = Math.min((num >> 8 & 0x00FF) + amt, 255);
-    const B = Math.min((num & 0x0000FF) + amt, 255);
-    return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
 }
 
 // ===================== ИГРОВЫЕ ОБЪЕКТЫ =====================
@@ -603,22 +297,19 @@ let player = {
     isJumping: false
 };
 
-// Платформы в стиле Mario
+// Платформы
 let platforms = [
-    // Основная земля
     {x: 0, y: CONFIG.world.groundLevel, width: 800, height: 50, type: 'ground'},
-    // Кирпичные платформы
     {x: 150, y: 280, width: 96, height: 32, type: 'brick'},
     {x: 320, y: 220, width: 96, height: 32, type: 'brick'},
     {x: 500, y: 280, width: 96, height: 32, type: 'brick'},
     {x: 650, y: 180, width: 64, height: 32, type: 'brick'},
-    // Вопросительные блоки
     {x: 200, y: 240, width: 32, height: 32, type: 'question'},
     {x: 370, y: 180, width: 32, height: 32, type: 'question'},
     {x: 550, y: 240, width: 32, height: 32, type: 'question'}
 ];
 
-// Предметы для сбора (вместо подарков - цветы, звезды, монеты)
+// Предметы
 let items = [
     {x: 200, y: 200, width: 32, height: 32, collected: false, type: 'flower'},
     {x: 370, y: 140, width: 32, height: 32, collected: false, type: 'star'},
@@ -629,21 +320,15 @@ let items = [
 
 let flag = {x: 750, y: 180, width: 40, height: 150, reached: false};
 let clouds = [
-    {x: 100, y: 60, width: 96, height: 48},
-    {x: 350, y: 80, width: 96, height: 48},
-    {x: 600, y: 40, width: 96, height: 48}
+    {x: 100, y: 60, width: 80, height: 40},
+    {x: 350, y: 80, width: 100, height: 50},
+    {x: 600, y: 40, width: 120, height: 60}
 ];
 
 let bushes = [
-    {x: 50, y: CONFIG.world.groundLevel - 30, width: 80, height: 48},
-    {x: 300, y: CONFIG.world.groundLevel - 30, width: 80, height: 48},
-    {x: 550, y: CONFIG.world.groundLevel - 30, width: 80, height: 48}
-];
-
-let mountains = [
-    {x: -50, y: 250, width: 120, height: 80},
-    {x: 200, y: 270, width: 120, height: 80},
-    {x: 500, y: 260, width: 120, height: 80}
+    {x: 50, y: CONFIG.world.groundLevel - 30, width: 60, height: 40},
+    {x: 300, y: CONFIG.world.groundLevel - 30, width: 80, height: 50},
+    {x: 550, y: CONFIG.world.groundLevel - 30, width: 70, height: 45}
 ];
 
 let score = 0;
@@ -730,11 +415,7 @@ function update() {
         player.velocityY = -CONFIG.player.jumpForce;
         player.isOnGround = false;
         player.isJumping = true;
-        createParticles(player.x + player.width/2, player.y + player.height, 5, '#FFD700');
     }
-    
-    // Анимация ходьбы
-    if (walkAnimationCounter > 60) walkAnimationCounter = 0;
     
     // Гравитация
     player.velocityY += CONFIG.gravity;
@@ -742,11 +423,6 @@ function update() {
     // Обновление позиции
     player.x += player.velocityX;
     player.y += player.velocityY;
-    
-    // Если игрок на земле, сбрасываем флаг прыжка
-    if (player.isOnGround) {
-        player.isJumping = false;
-    }
     
     // Границы экрана
     if (player.x < 0) player.x = 0;
@@ -756,11 +432,6 @@ function update() {
     if (player.y > canvas.height) {
         loseLife();
         return;
-    }
-    
-    // Движение фона (параллакс)
-    if (player.velocityX !== 0) {
-        backgroundOffset += player.velocityX * CONFIG.world.backgroundSpeed * 0.1;
     }
     
     // Столкновение с платформами
@@ -789,15 +460,7 @@ function update() {
             score += item.type === 'coin' ? 100 : 200;
             scoreElement.textContent = score;
             
-            // Эффект сбора
-            const colors = {
-                'flower': '#FF69B4',
-                'star': '#FFD700',
-                'coin': '#FFD700'
-            };
-            createParticles(item.x + item.width/2, item.y + item.height/2, 10, colors[item.type]);
-            
-            // Показываем сообщение принцессы
+            // Показываем сообщение
             showFloatingMessage(
                 peachMessages[index % peachMessages.length], 
                 item.x + item.width/2, 
@@ -842,14 +505,6 @@ function update() {
         }
     }
     
-    // Обновление частиц
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].update();
-        if (particles[i].life <= 0) {
-            particles.splice(i, 1);
-        }
-    }
-    
     // Обновление плавающих сообщений
     for (let i = floatingMessages.length - 1; i >= 0; i--) {
         floatingMessages[i].update();
@@ -863,13 +518,8 @@ function draw() {
     // Очистка экрана
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Градиентное небо (утро в Mushroom Kingdom)
-    const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGradient.addColorStop(0, '#87CEEB'); // Голубой
-    skyGradient.addColorStop(0.6, '#5c94fc'); // Синий
-    skyGradient.addColorStop(1, '#1a5fb4'); // Темно-синий
-    
-    ctx.fillStyle = skyGradient;
+    // Фон
+    ctx.fillStyle = CONFIG.world.skyColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Солнце
@@ -878,104 +528,60 @@ function draw() {
     ctx.arc(700, 60, 30, 0, Math.PI * 2);
     ctx.fill();
     
-    // Лучи солнца
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4;
-        ctx.beginPath();
-        ctx.moveTo(
-            700 + Math.cos(angle) * 30,
-            60 + Math.sin(angle) * 30
-        );
-        ctx.lineTo(
-            700 + Math.cos(angle) * 45,
-            60 + Math.sin(angle) * 45
-        );
-        ctx.stroke();
-    }
-    
-    // Горы с параллаксом
-    mountains.forEach((mountain, index) => {
-        const parallaxOffset = backgroundOffset * 0.3;
-        const x = (mountain.x + parallaxOffset * (index + 1)) % (canvas.width + 200) - 100;
-        ctx.drawImage(sprites.background.mountain, x, mountain.y, mountain.width, mountain.height);
-    });
-    
-    // Облака с параллаксом
-    clouds.forEach((cloud, index) => {
-        const parallaxOffset = backgroundOffset * 0.5;
-        const x = (cloud.x + parallaxOffset * (index + 1)) % (canvas.width + 200) - 100;
-        ctx.drawImage(sprites.background.cloud, x, cloud.y, cloud.width, cloud.height);
+    // Облака
+    clouds.forEach(cloud => {
+        if (sprites.background.cloud) {
+            ctx.drawImage(sprites.background.cloud, cloud.x, cloud.y, cloud.width, cloud.height);
+        }
     });
     
     // Кусты
     bushes.forEach(bush => {
-        ctx.drawImage(sprites.background.bush, bush.x, bush.y, bush.width, bush.height);
+        if (sprites.background.bush) {
+            ctx.drawImage(sprites.background.bush, bush.x, bush.y, bush.width, bush.height);
+        }
     });
     
     // Платформы
     platforms.forEach(platform => {
         if (platform.type === 'ground') {
-            // Земля с текстурой
-            for (let x = platform.x; x < platform.x + platform.width; x += 32) {
-                for (let y = platform.y; y < platform.y + platform.height; y += 32) {
-                    ctx.drawImage(sprites.tiles.ground, x, y, 32, 32);
-                }
-            }
-        } else if (platform.type === 'brick') {
-            // Кирпичные блоки
+            // Земля
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Трава сверху
+            ctx.fillStyle = '#7CFC00';
+            ctx.fillRect(platform.x, platform.y - 10, platform.width, 10);
+        } else if (platform.type === 'brick' && sprites.tiles.brick) {
             for (let x = platform.x; x < platform.x + platform.width; x += 32) {
                 for (let y = platform.y; y < platform.y + platform.height; y += 32) {
                     ctx.drawImage(sprites.tiles.brick, x, y, 32, 32);
                 }
             }
-        } else if (platform.type === 'question') {
-            // Вопросительные блоки с анимацией
+        } else if (platform.type === 'question' && sprites.tiles.question) {
             ctx.drawImage(sprites.tiles.question, platform.x, platform.y, platform.width, platform.height);
-            
-            // Анимация мигания
-            if (Math.sin(Date.now() / 200) > 0) {
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                ctx.globalAlpha = 1;
-            }
         }
     });
     
     // Предметы
     items.forEach(item => {
-        if (!item.collected) {
+        if (!item.collected && sprites.items[item.type]) {
             ctx.drawImage(sprites.items[item.type], item.x, item.y, item.width, item.height);
-            
-            // Анимация парения для цветов и звезд
-            if (item.type !== 'coin') {
-                const floatOffset = Math.sin(Date.now() / 300) * 5;
-                ctx.drawImage(sprites.items[item.type], item.x, item.y + floatOffset, item.width, item.height);
-            }
-            
-            // Мигание для монет
-            if (item.type === 'coin') {
-                if (Math.sin(Date.now() / 150) > 0) {
-                    ctx.globalAlpha = 0.7;
-                    ctx.drawImage(sprites.items.coin, item.x, item.y, item.width, item.height);
-                    ctx.globalAlpha = 1;
-                }
-            }
         }
     });
     
     // Флаг
-    ctx.drawImage(sprites.items.flag, flag.x, flag.y, flag.width, flag.height);
+    if (sprites.items.flag) {
+        ctx.drawImage(sprites.items.flag, flag.x, flag.y, flag.width, flag.height);
+    }
     
-    // Игрок (принцесса Пич) с анимацией
+    // Игрок
     let playerSprite;
     if (!player.isOnGround) {
         // Прыжок
         playerSprite = player.facingRight ? sprites.peach.jumpRight : sprites.peach.jumpLeft;
     } else if (player.velocityX !== 0) {
-        // Ходьба - циклическая анимация
+        // Ходьба
         const walkFrame = Math.floor(walkAnimationCounter / WALK_ANIMATION_SPEED) % sprites.peach.walkRight.length;
         playerSprite = player.facingRight ? sprites.peach.walkRight[walkFrame] : sprites.peach.walkLeft[walkFrame];
     } else {
@@ -983,15 +589,9 @@ function draw() {
         playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.standLeft;
     }
     
-    // Рисуем игрока с учетом невидимости
-    if (!player.invincible || Math.floor(Date.now() / 100) % 2 === 0) {
+    if (playerSprite && (!player.invincible || Math.floor(Date.now() / 100) % 2 === 0)) {
         ctx.drawImage(playerSprite, player.x, player.y, player.width, player.height);
     }
-    
-    // Частицы
-    particles.forEach(particle => {
-        particle.draw(ctx);
-    });
     
     // Плавающие сообщения
     floatingMessages.forEach(message => {
@@ -1008,22 +608,6 @@ function draw() {
         ctx.moveTo(0, 0);
         ctx.lineTo(40, -20);
         ctx.lineTo(0, -40);
-        ctx.fill();
-        
-        // Корона на флаге
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.moveTo(10, -30);
-        ctx.lineTo(13, -24);
-        ctx.lineTo(18, -24);
-        ctx.lineTo(14, -20);
-        ctx.lineTo(16, -14);
-        ctx.lineTo(10, -18);
-        ctx.lineTo(4, -14);
-        ctx.lineTo(6, -20);
-        ctx.lineTo(2, -24);
-        ctx.lineTo(7, -24);
-        ctx.closePath();
         ctx.fill();
         ctx.restore();
     }
@@ -1045,11 +629,6 @@ function loseLife() {
         player.y = CONFIG.player.startY;
         player.velocityX = 0;
         player.velocityY = 0;
-        
-        // Эффект потери жизни
-        for (let i = 0; i < 20; i++) {
-            createParticles(player.x + player.width/2, player.y + player.height/2, 3, '#FF69B4');
-        }
     }
 }
 
@@ -1068,18 +647,6 @@ function showWinMessage() {
         <div style="margin-top: 20px; font-size: 0.7em;">Нажми R или кнопку для новой игры</div>
     `;
     messageElement.style.display = 'block';
-    
-    // Фейерверк в розовых тонах
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            createParticles(
-                Math.random() * canvas.width,
-                Math.random() * canvas.height,
-                10,
-                ['#FF69B4', '#FFD700', '#FFB6C1', '#DA70D6'][Math.floor(Math.random() * 4)]
-            );
-        }, i * 100);
-    }
 }
 
 function showMessage(text) {
@@ -1109,42 +676,11 @@ function showFloatingMessage(text, x, y) {
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 3;
             
-            // Тень
             ctx.strokeText(this.text, this.x, this.y);
-            // Основной текст
             ctx.fillText(this.text, this.x, this.y);
             ctx.restore();
         }
     });
-}
-
-function createParticles(x, y, count, color) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x,
-            y: y,
-            velocityX: (Math.random() - 0.5) * 8,
-            velocityY: (Math.random() - 0.5) * 8 - 2,
-            life: 30 + Math.random() * 30,
-            color: color,
-            size: 2 + Math.random() * 4,
-            update: function() {
-                this.x += this.velocityX;
-                this.y += this.velocityY;
-                this.velocityY += 0.1;
-                this.life--;
-                this.size *= 0.95;
-            },
-            draw: function(ctx) {
-                ctx.globalAlpha = this.life / 60;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
-        });
-    }
 }
 
 function resetGame() {

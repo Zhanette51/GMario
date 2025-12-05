@@ -3,8 +3,8 @@ const CONFIG = {
     player: {
         startX: 50,
         startY: 50, // Опустили игрока (было 250)
-        width: 20,
-        height: 20,
+        width: 60,
+        height: 80,
         speed: 5,
         jumpForce: 16,
         lives: 3

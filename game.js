@@ -2,7 +2,7 @@
 const CONFIG = {
     player: {
         startX: 50,
-        startY: 290, // Опустили игрока (было 250)
+        startY: 180, // Опустили игрока (было 250)
         width: 120,
         height: 180,
         speed: 5,

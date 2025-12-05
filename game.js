@@ -58,7 +58,7 @@ const spriteSizes = {
     gift: { width: 30, height: 30 },
     flag: { width: 40, height: 150 },
     ground: { width: 32, height: 32 },
-    platform: { width: 32, height: 32 },
+    platform: { width: 32, height: 80 }, // Изменено: высота 80 (32 + 48)
     clouds: { width: 80, height: 40 },
     background_mountains: { width: 240, height: 200 },
     grass: { width: 32, height: 66 }
@@ -156,9 +156,24 @@ function createSpritesFromImages() {
     }
     
     if (images.platform) {
-        sprites.tiles.platform = images.platform;
+        // Создаем новый спрайт платформы с растяжением вниз на 48 пикселей
+        const platformCanvas = document.createElement('canvas');
+        platformCanvas.width = spriteSizes.platform.width;
+        platformCanvas.height = spriteSizes.platform.height; // 80 пикселей
+        const platformCtx = platformCanvas.getContext('2d');
+        
+        // Рисуем оригинальное изображение платформы (32x32) в верхней части
+        platformCtx.drawImage(images.platform, 0, 0, 32, 32);
+        
+        // Растягиваем нижнюю 1 пиксельную линию на оставшиеся 48 пикселей
+        const imageData = platformCtx.getImageData(0, 31, 32, 1); // Берем последнюю строку
+        for (let y = 32; y < 80; y++) {
+            platformCtx.putImageData(imageData, 0, y);
+        }
+        
+        sprites.tiles.platform = platformCanvas;
     } else {
-        sprites.tiles.platform = createSimpleSprite(32, 32, '#C04000', 'brick');
+        sprites.tiles.platform = createSimpleSprite(32, 80, '#C04000', 'platform'); // Высота 80
     }
     
     // Трава
@@ -322,7 +337,7 @@ function createFallbackSprite(type) {
             images.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
             break;
         case 'platform':
-            images.platform = createSimpleSprite(32, 32, '#C04000', 'platform');
+            images.platform = createSimpleSprite(32, 80, '#C04000', 'platform'); // Высота 80
             break;
         case 'grass':
             images.grass = createSimpleSprite(32, 66, '#7CFC00', 'grass');
@@ -404,7 +419,7 @@ function createSimpleSprite(width, height, color, type) {
     
     ctx.clearRect(0, 0, width, height);
     
-    if (type === 'ground' || type === 'brick') {
+    if (type === 'ground') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         
@@ -412,6 +427,20 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
+    } else if (type === 'platform') {
+        // Платформа с растяжением вниз (высота 80)
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Полоски только в верхней части (первые 32 пикселя)
+        ctx.fillStyle = darkenColor(color, 30);
+        for (let x = 4; x < width; x += 8) {
+            ctx.fillRect(x, 0, 2, 32);
+        }
+        
+        // Нижняя часть (оставшиеся 48 пикселей) - немного темнее
+        ctx.fillStyle = darkenColor(color, 15);
+        ctx.fillRect(0, 32, width, height - 32);
     } else if (type === 'grass') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
@@ -524,7 +553,6 @@ restartButton.addEventListener('click', resetGame);
 
 // ===================== ОСНОВНЫЕ ФУНКЦИИ =====================
 function initGame() {
-    // Начинаем игру с платформы, а не с воздуха
     player = {
         x: CONFIG.player.startX,
         y: CONFIG.player.startY,
@@ -617,12 +645,9 @@ function update() {
     // Проверяем столкновение с платформами по X
     platforms.forEach(platform => {
         if (checkCollision(player, platform)) {
-            // Если столкнулись по горизонтали, возвращаем старую позицию
             if (player.velocityX > 0) {
-                // Двигались вправо
                 player.x = platform.x - player.width;
             } else if (player.velocityX < 0) {
-                // Двигались влево
                 player.x = platform.x + platform.width;
             }
             player.velocityX = 0;
@@ -637,13 +662,11 @@ function update() {
     platforms.forEach(platform => {
         if (checkCollision(player, platform)) {
             if (player.velocityY > 0) {
-                // Падаем вниз - ставим на платформу
                 player.y = platform.y - player.height;
                 player.velocityY = 0;
                 player.isOnGround = true;
                 player.isJumping = false;
             } else if (player.velocityY < 0) {
-                // Прыгаем вверх - ударяемся головой
                 player.y = platform.y + platform.height;
                 player.velocityY = 0;
             }
@@ -825,14 +848,15 @@ function draw() {
                 }
             }
         } else if (platform.type === 'platform' && sprites.tiles.platform) {
-            // Летающие островки
+            // Летающие островки (теперь высота 80 пикселей)
             for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.platform.width) {
+                // Рисуем платформу с растяжением вниз
                 ctx.drawImage(
                     sprites.tiles.platform, 
                     x, 
-                    platform.y, 
+                    platform.y, // Верх платформы остается на той же высоте
                     spriteSizes.platform.width, 
-                    spriteSizes.platform.height
+                    spriteSizes.platform.height // Высота теперь 80
                 );
             }
         }

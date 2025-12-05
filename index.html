@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>С Днём Рождения!</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Скрываем изображения предзагрузки */
+        #preload { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 С Юбилеем! 🎉</h1>
+        <p class="subtitle">Помоги Маме-Марио собрать все подарки к празднику!</p>
+        <p class="controls-info">Управление: <kbd>←</kbd> <kbd>→</kbd> - бег, <kbd>↑</kbd> - прыжок, <kbd>R</kbd> - перезапуск</p>
+
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            <div id="message" class="message"></div>
+            <div id="loading" class="loading">Загрузка игры...</div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat">
+                <span class="stat-label">Подарки:</span>
+                <span id="score">0</span>/<span id="totalGifts">5</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Жизни:</span>
+                <span id="lives">❤️❤️❤️</span>
+            </div>
+            <button id="restartButton" class="pixel-button">Играть снова!</button>
+        </div>
+
+        <div class="footer">
+            <p>Создано с безграничной любовью 💖</p>
+            <p class="hint">Собери все подарки и дойди до флага!</p>
+        </div>
+    </div>
+
+    <!-- Предзагрузка изображений -->
+    <div id="preload">
+        <img src="images/mama.png" id="mamaSprite">
+        <img src="images/blocks.png" id="blockSprite">
+        <img src="images/gift.png" id="giftSprite">
+        <img src="images/flag.png" id="flagSprite">
+        <img src="images/cloud.png" id="cloudSprite">
+        <img src="images/bush.png" id="bushSprite">
+        <img src="images/pipe.png" id="pipeSprite">
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

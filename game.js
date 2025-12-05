@@ -2,11 +2,11 @@
 const CONFIG = {
     player: {
         startX: 50,
-        startY: 290, // Опустили игрока (было 250)
+        startY: 284, // Старт на уровне травы (350 - 180 + 114)
         width: 120,
         height: 180,
         speed: 5,
-        jumpForce: 16,
+        jumpForce: 18, // Увеличиваем силу прыжка для платформ
         lives: 3
     },
     gravity: 0.8,
@@ -49,7 +49,7 @@ const images = {
     platform: null,
     clouds: null,
     background_mountains: null,
-    grass: null // Добавили траву
+    grass: null
 };
 
 // Размеры спрайтов
@@ -58,10 +58,16 @@ const spriteSizes = {
     gift: { width: 30, height: 30 },
     flag: { width: 40, height: 150 },
     ground: { width: 32, height: 32 },
-    platform: { width: 32, height: 32 },
+    platform: { width: 128, height: 128 }, // В 4 раза больше (32*4)
     clouds: { width: 80, height: 40 },
     background_mountains: { width: 240, height: 200 },
-    grass: { width: 32, height: 66 } // Высота 1/3 гор (200/3 ≈ 66)
+    grass: { width: 32, height: 66 }
+};
+
+// Коллизия платформ (реальный размер для физики)
+const platformCollision = {
+    width: 32,  // Оригинальный размер для коллизии
+    height: 32
 };
 
 // Спрайты для игры
@@ -79,10 +85,10 @@ const sprites = {
     background: {}
 };
 
-// Птички для анимации (буква V)
+// Птички для анимации (вертикальные)
 const birds = [];
 let lastBirdTime = 0;
-const BIRD_INTERVAL = 2500; // Птичка каждые 2.5 секунды
+const BIRD_INTERVAL = 1800; // Птичка каждые 1.8 секунды
 
 // Параметры анимации
 let animationFrame = 0;
@@ -92,7 +98,7 @@ const WALK_ANIMATION_SPEED = 8;
 // Функция загрузки изображений
 function loadSprites() {
     let loadedCount = 0;
-    const totalImages = 8; // Теперь 8 изображений (с травой)
+    const totalImages = 8;
     
     function updateProgress() {
         loadedCount++;
@@ -101,7 +107,6 @@ function loadSprites() {
         
         if (loadedCount === totalImages) {
             setTimeout(() => {
-                // После загрузки всех изображений создаем спрайты
                 createSpritesFromImages();
                 loadingElement.style.display = 'none';
                 initGame();
@@ -109,7 +114,6 @@ function loadSprites() {
         }
     }
     
-    // Массив изображений для загрузки
     const imageFiles = [
         { name: 'peach', path: 'images/peach.png' },
         { name: 'gift', path: 'images/gift.png' },
@@ -118,10 +122,9 @@ function loadSprites() {
         { name: 'platform', path: 'images/platform.png' },
         { name: 'clouds', path: 'images/clouds.png' },
         { name: 'background_mountains', path: 'images/background_mountains.png' },
-        { name: 'grass', path: 'images/grass.png' } // Добавили траву
+        { name: 'grass', path: 'images/grass.png' }
     ];
     
-    // Загружаем все изображения
     imageFiles.forEach(imgData => {
         const img = new Image();
         img.onload = function() {
@@ -139,7 +142,6 @@ function loadSprites() {
 
 // Создание спрайтов из загруженных изображений
 function createSpritesFromImages() {
-    // Принцесса Пич
     if (images.peach) {
         sprites.peach.standRight = images.peach;
         sprites.peach.standLeft = createMirroredImage(images.peach);
@@ -151,7 +153,6 @@ function createSpritesFromImages() {
         createFallbackPeachSprites();
     }
     
-    // Блоки и платформы
     if (images.ground) {
         sprites.tiles.ground = images.ground;
     } else {
@@ -161,17 +162,15 @@ function createSpritesFromImages() {
     if (images.platform) {
         sprites.tiles.platform = images.platform;
     } else {
-        sprites.tiles.platform = createSimpleSprite(32, 32, '#C04000', 'brick');
+        sprites.tiles.platform = createSimpleSprite(128, 128, '#C04000', 'platform');
     }
     
-    // Трава
     if (images.grass) {
         sprites.tiles.grass = images.grass;
     } else {
         sprites.tiles.grass = createSimpleSprite(32, 66, '#7CFC00', 'grass');
     }
     
-    // Подарки и флаг
     if (images.gift) {
         sprites.gifts.gift = images.gift;
     } else {
@@ -184,7 +183,6 @@ function createSpritesFromImages() {
         sprites.gifts.flag = createSimpleSprite(40, 150, '#FF69B4', 'flag');
     }
     
-    // Фон
     if (images.clouds) {
         sprites.background.clouds = images.clouds;
     } else {
@@ -217,80 +215,90 @@ function createSpritesFromImages() {
     }
 }
 
-// Функция создания птички в виде буквы V
-function createVBird() {
+// Функция создания вертикальной птички (вертикальная буква V)
+function createVerticalBird() {
     return {
-        x: -30, // Начинаем за экраном слева
-        y: 50 + Math.random() * 120, // Случайная высота
-        width: 20,
-        height: 15,
-        speed: 1 + Math.random() * 1.5, // Случайная скорость
-        wingAngle: Math.random() * Math.PI / 4, // Начальный угол крыльев
-        wingSpeed: 0.15 + Math.random() * 0.1,
-        angle: (Math.random() - 0.5) * 0.3, // Наклон тела
-        angleSpeed: 0.02 + Math.random() * 0.02,
+        x: -30,
+        y: 50 + Math.random() * 150,
+        width: 15,
+        height: 20,
+        speed: 1.2 + Math.random() * 1.3,
+        wingAngle: Math.random() * Math.PI / 4,
+        wingSpeed: 0.12 + Math.random() * 0.08,
         color: ['#8B4513', '#A0522D', '#D2691E', '#5D2906'][Math.floor(Math.random() * 4)],
         update: function() {
             this.x += this.speed;
-            // Анимация взмахов крыльев (угол меняется по синусу)
-            this.wingAngle = Math.PI/6 + Math.sin(Date.now() / 200 + this.x * 0.1) * Math.PI/12;
-            // Легкое покачивание тела
-            this.angle = Math.sin(Date.now() / 500 + this.x * 0.05) * 0.2;
-            return this.x < canvas.width + 50; // Удаляем, если улетела за правый край
+            this.wingAngle = Math.PI/6 + Math.sin(Date.now() / 180 + this.x * 0.1) * Math.PI/10;
+            return this.x < canvas.width + 50;
         },
         draw: function(ctx) {
             ctx.save();
             ctx.translate(this.x, this.y);
-            ctx.rotate(this.angle);
             
-            // Рисуем птицу как букву V (крылья)
+            // Вертикальная птица - тело вертикально
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             
-            // Левое крыло
+            // Верхнее крыло (вертикальная V - левое крыло)
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            const leftWingX = Math.cos(this.wingAngle) * 15;
-            const leftWingY = Math.sin(this.wingAngle) * 15;
-            ctx.lineTo(-leftWingX, leftWingY);
+            const leftWingX = Math.cos(this.wingAngle) * 12;
+            const leftWingY = Math.sin(this.wingAngle) * 12;
+            ctx.lineTo(-leftWingX, -leftWingY);
             ctx.stroke();
             
-            // Правое крыло
+            // Нижнее крыло (вертикальная V - правое крыло)
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            const rightWingX = Math.cos(this.wingAngle) * 15;
-            const rightWingY = Math.sin(this.wingAngle) * 15;
-            ctx.lineTo(-rightWingX, -rightWingY);
+            const rightWingX = Math.cos(this.wingAngle) * 12;
+            const rightWingY = Math.sin(this.wingAngle) * 12;
+            ctx.lineTo(rightWingX, rightWingY);
             ctx.stroke();
             
-            // Тело (короткая линия между крыльями)
+            // Тело (вертикальная линия)
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(8, 0);
+            ctx.moveTo(0, -8);
+            ctx.lineTo(0, 8);
             ctx.stroke();
             
             // Глаз
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.arc(4, -2, 1.5, 0, Math.PI * 2);
+            ctx.arc(0, -4, 1.5, 0, Math.PI * 2);
             ctx.fill();
             
-            // Клюв
+            // Клюв (вертикальный)
             ctx.fillStyle = '#FFD700';
             ctx.beginPath();
-            ctx.moveTo(8, 0);
-            ctx.lineTo(12, -3);
-            ctx.lineTo(12, 3);
+            ctx.moveTo(0, -8);
+            ctx.lineTo(-3, -12);
+            ctx.lineTo(3, -12);
             ctx.closePath();
             ctx.fill();
             
             ctx.restore();
+        },
+        // Проверка столкновения с игроком
+        checkCollision: function(player) {
+            const birdLeft = this.x - this.width/2;
+            const birdRight = this.x + this.width/2;
+            const birdTop = this.y - this.height/2;
+            const birdBottom = this.y + this.height/2;
+            
+            const playerLeft = player.x;
+            const playerRight = player.x + player.width;
+            const playerTop = player.y;
+            const playerBottom = player.y + player.height;
+            
+            return !(birdRight < playerLeft || 
+                    birdLeft > playerRight || 
+                    birdBottom < playerTop || 
+                    birdTop > playerBottom);
         }
     };
 }
 
-// Функция создания зеркального отражения изображения
 function createMirroredImage(originalImage) {
     const canvas = document.createElement('canvas');
     canvas.width = originalImage.width;
@@ -304,7 +312,6 @@ function createMirroredImage(originalImage) {
     return canvas;
 }
 
-// Резервные спрайты
 function createFallbackSprite(type) {
     switch(type) {
         case 'peach':
@@ -320,7 +327,7 @@ function createFallbackSprite(type) {
             images.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
             break;
         case 'platform':
-            images.platform = createSimpleSprite(32, 32, '#C04000', 'platform');
+            images.platform = createSimpleSprite(128, 128, '#C04000', 'platform');
             break;
         case 'grass':
             images.grass = createSimpleSprite(32, 66, '#7CFC00', 'grass');
@@ -410,15 +417,24 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
-    } else if (type === 'grass') {
-        // Простая трава
+    } else if (type === 'platform') {
+        // Платформа в 4 раза больше
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         
-        // Детали травы
+        // Детали для большой платформы
+        ctx.fillStyle = darkenColor(color, 20);
+        ctx.fillRect(0, 0, width, 10);
+        ctx.fillRect(0, 0, 10, height);
+        ctx.fillRect(width-10, 0, 10, height);
+        ctx.fillRect(0, height-10, width, 10);
+    } else if (type === 'grass') {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+        
         ctx.fillStyle = darkenColor(color, 20);
         for (let i = 0; i < 8; i++) {
-            ctx.fillRect(i * 4, height - 10 + Math.sin(i) * 3, 2, 10);
+            ctx.fillRect(i * 4, height - 15 + Math.sin(i) * 5, 2, 15);
         }
     } else if (type === 'gift') {
         ctx.fillStyle = color;
@@ -455,12 +471,12 @@ function darkenColor(color, percent) {
 // ===================== ИГРОВЫЕ ОБЪЕКТЫ =====================
 let player = {
     x: CONFIG.player.startX,
-    y: CONFIG.player.startY, // Опущена
+    y: CONFIG.player.startY, // Старт на уровне травы
     width: CONFIG.player.width,
     height: CONFIG.player.height,
     velocityX: 0,
     velocityY: 0,
-    isOnGround: false,
+    isOnGround: true, // Начинаем на земле
     facingRight: true,
     lives: CONFIG.player.lives,
     invincible: false,
@@ -468,13 +484,13 @@ let player = {
     isJumping: false
 };
 
-// Платформы
+// Платформы - позиции для коллизии (реальный размер)
 let platforms = [
     {x: 0, y: CONFIG.world.groundLevel, width: 800, height: 32, type: 'ground'},
-    {x: 150, y: 280, width: 96, height: 32, type: 'platform'},
-    {x: 320, y: 220, width: 96, height: 32, type: 'platform'},
-    {x: 500, y: 280, width: 96, height: 32, type: 'platform'},
-    {x: 650, y: 180, width: 64, height: 32, type: 'platform'}
+    {x: 150, y: 280, width: 32, height: 32, type: 'platform'}, // Коллизия 32x32
+    {x: 320, y: 220, width: 32, height: 32, type: 'platform'},
+    {x: 500, y: 280, width: 32, height: 32, type: 'platform'},
+    {x: 650, y: 180, width: 32, height: 32, type: 'platform'}
 ];
 
 // Подарки
@@ -486,10 +502,8 @@ let gifts = [
     {x: 750, y: 100, width: 30, height: 30, collected: false, type: 'gift'}
 ];
 
-// Флаг (низ на земле)
 let flag = {x: 750, y: CONFIG.world.groundLevel - 150, width: 40, height: 150, reached: false};
 
-// Фоновые элементы
 let clouds = [
     {x: 100, y: 60, width: 80, height: 40},
     {x: 350, y: 80, width: 100, height: 50},
@@ -531,7 +545,7 @@ function initGame() {
         height: CONFIG.player.height,
         velocityX: 0,
         velocityY: 0,
-        isOnGround: false,
+        isOnGround: true,
         facingRight: true,
         lives: CONFIG.player.lives,
         invincible: false,
@@ -561,10 +575,7 @@ function updateScoreDisplay() {
 }
 
 function gameLoop() {
-    if (gameOver || gameWin) {
-        if (gameWin) {
-            showWinMessage();
-        }
+    if (gameOver) {
         return;
     }
     
@@ -608,33 +619,43 @@ function update() {
     
     // Проверка падения
     if (player.y > canvas.height) {
-        loseLife();
+        loseLife("упала с края!");
         return;
     }
     
-    // Столкновение с платформами (только по цветной части - делаем более строгую проверку)
+    // Столкновение с землей (grass уровень)
     player.isOnGround = false;
+    
+    // Земля (grass уровень) - вся площадь земли
+    const groundY = CONFIG.world.groundLevel - 32; // Уровень земли под травой
+    if (player.y + player.height >= groundY && 
+        player.y + player.height <= groundY + 5 &&
+        player.velocityY >= 0) {
+        
+        player.y = groundY - player.height;
+        player.velocityY = 0;
+        player.isOnGround = true;
+        player.isJumping = false;
+    }
+    
+    // Платформы - только сверху, можно пройти снизу
     platforms.forEach(platform => {
-        // Проверяем, находится ли игрок над платформой и падает ли вниз
-        if (player.velocityY >= 0 && // Падает или стоит
-            player.x < platform.x + platform.width &&
-            player.x + player.width > platform.x &&
-            player.y + player.height <= platform.y + 5 && // Более точная проверка
-            player.y + player.height >= platform.y - 5) {
-            
-            // Проверяем, что игрок находится над цветной частью платформы
-            // (упрощенно: проверяем, что центр игрока над платформой)
-            const playerCenterX = player.x + player.width / 2;
-            const playerCenterY = player.y + player.height;
-            
-            if (playerCenterX >= platform.x && playerCenterX <= platform.x + platform.width &&
-                playerCenterY >= platform.y - 10 && playerCenterY <= platform.y + 10) {
+        if (platform.type === 'platform') {
+            // Проверяем только сверху платформы
+            if (player.x < platform.x + platform.width &&
+                player.x + player.width > platform.x &&
+                player.y + player.height >= platform.y &&
+                player.y + player.height <= platform.y + 10 &&
+                player.velocityY >= 0) { // Только если падает или стоит
                 
-                // Корректируем позицию игрока
-                player.y = platform.y - player.height;
-                player.velocityY = 0;
-                player.isOnGround = true;
-                player.isJumping = false;
+                // Проверяем, что игрок находится над платформой (не сбоку)
+                const playerBottom = player.y + player.height;
+                if (playerBottom >= platform.y && playerBottom <= platform.y + 15) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.isOnGround = true;
+                    player.isJumping = false;
+                }
             }
         }
     });
@@ -677,6 +698,7 @@ function update() {
         flag.reached = true;
         if (score === gifts.length) {
             gameWin = true;
+            showWinMessage();
         } else {
             messageElement.textContent = `Сначала собери все подарки! (${score}/${gifts.length})`;
             messageElement.style.display = 'block';
@@ -703,16 +725,21 @@ function update() {
         }
     }
     
-    // Обновление птичек
+    // Обновление птичек и проверка столкновений
     const now = Date.now();
     if (now - lastBirdTime > BIRD_INTERVAL) {
-        birds.push(createVBird());
+        birds.push(createVerticalBird());
         lastBirdTime = now;
     }
     
     for (let i = birds.length - 1; i >= 0; i--) {
         if (!birds[i].update()) {
             birds.splice(i, 1);
+        } else if (birds[i].checkCollision(player)) {
+            // Столкновение с птицей
+            birds.splice(i, 1);
+            loseLife("столкнулась с птицей!");
+            break;
         }
     }
 }
@@ -753,7 +780,7 @@ function draw() {
         ctx.stroke();
     }
     
-    // Горы (высокие)
+    // Горы
     mountains.forEach(mountain => {
         if (sprites.background.mountains) {
             ctx.drawImage(
@@ -779,7 +806,7 @@ function draw() {
         }
     });
     
-    // Птички (новые V-образные)
+    // Птички (вертикальные)
     birds.forEach(bird => {
         bird.draw(ctx);
     });
@@ -788,45 +815,34 @@ function draw() {
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, CONFIG.world.groundLevel, canvas.width, canvas.height - CONFIG.world.groundLevel);
     
-    // Платформы
+    // Земля (ground блоки)
     platforms.forEach(platform => {
-        if (platform.type === 'ground') {
-            // Земля
-            if (sprites.tiles.ground) {
-                for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.ground.width) {
-                    ctx.drawImage(
-                        sprites.tiles.ground, 
-                        x, 
-                        platform.y, 
-                        spriteSizes.ground.width, 
-                        spriteSizes.ground.height
-                    );
-                }
-            }
-        } else if (platform.type === 'platform' && sprites.tiles.platform) {
-            // Летающие островки
-            for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.platform.width) {
+        if (platform.type === 'ground' && sprites.tiles.ground) {
+            for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.ground.width) {
                 ctx.drawImage(
-                    sprites.tiles.platform, 
+                    sprites.tiles.ground, 
                     x, 
                     platform.y, 
-                    spriteSizes.platform.width, 
-                    spriteSizes.platform.height
+                    spriteSizes.ground.width, 
+                    spriteSizes.ground.height
                 );
             }
         }
     });
     
-    // Трава поверх земли (дублируется по всему ground вплотную)
+    // Трава поверх земли (плотно, без промежутков, сплошная стена)
     if (sprites.tiles.grass) {
         platforms.forEach(platform => {
             if (platform.type === 'ground') {
-                for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.grass.width) {
-                    // Трава рисуется прямо на ground, без левитации
+                // Рассчитываем сколько блоков травы нужно для полного покрытия
+                const grassBlocks = Math.ceil(platform.width / spriteSizes.grass.width);
+                for (let i = 0; i < grassBlocks; i++) {
+                    const x = platform.x + i * spriteSizes.grass.width;
+                    // Рисуем траву плотно, без промежутков
                     ctx.drawImage(
                         sprites.tiles.grass, 
                         x, 
-                        CONFIG.world.groundLevel - spriteSizes.grass.height + 10, // +10 чтобы немного выступала
+                        CONFIG.world.groundLevel - spriteSizes.grass.height,
                         spriteSizes.grass.width, 
                         spriteSizes.grass.height
                     );
@@ -835,7 +851,7 @@ function draw() {
         });
     }
     
-    // Игрок (рисуется после травы, чтобы была сверху)
+    // Игрок (рисуется после травы, но перед платформами)
     let playerSprite;
     if (!player.isOnGround) {
         playerSprite = player.facingRight ? sprites.peach.jumpRight : sprites.peach.jumpLeft;
@@ -843,7 +859,7 @@ function draw() {
         const walkFrame = Math.floor(walkAnimationCounter / WALK_ANIMATION_SPEED) % sprites.peach.walkRight.length;
         playerSprite = player.facingRight ? sprites.peach.walkRight[walkFrame] : sprites.peach.walkLeft[walkFrame];
     } else {
-        playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.jumpLeft;
+        playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.standLeft;
     }
     
     if (playerSprite && (!player.invincible || Math.floor(Date.now() / 100) % 2 === 0)) {
@@ -855,6 +871,24 @@ function draw() {
             spriteSizes.peach.height
         );
     }
+    
+    // Платформы (рисуются увеличенными в 4 раза, после игрока)
+    platforms.forEach(platform => {
+        if (platform.type === 'platform' && sprites.tiles.platform) {
+            // Рисуем платформу в 4 раза больше, но позиционируем так,
+            // чтобы визуальный центр совпадал с коллизией
+            const visualX = platform.x - (spriteSizes.platform.width - platformCollision.width) / 2;
+            const visualY = platform.y - (spriteSizes.platform.height - platformCollision.height);
+            
+            ctx.drawImage(
+                sprites.tiles.platform, 
+                visualX, 
+                visualY, 
+                spriteSizes.platform.width, 
+                spriteSizes.platform.height
+            );
+        }
+    });
     
     // Подарки
     gifts.forEach(gift => {
@@ -877,7 +911,7 @@ function draw() {
         }
     });
     
-    // Флаг (низ на земле)
+    // Флаг
     if (sprites.gifts.flag) {
         ctx.drawImage(
             sprites.gifts.flag, 
@@ -934,15 +968,15 @@ function draw() {
     }
 }
 
-function loseLife() {
+function loseLife(reason = "") {
     if (player.invincible) return;
     
     player.lives--;
-    livesElement.textContent = '👑'.repeat(player.lives);
+    livesElement.textContent = '👑'.repeat(Math.max(0, player.lives));
     
     if (player.lives <= 0) {
         gameOver = true;
-        showMessage("Не сдавайся, принцесса! Попробуй ещё раз! 💖");
+        showMessage("Птицы опасны! Ничего страшного, попробуй еще раз! 💖");
     } else {
         player.invincible = true;
         player.invincibleTimer = 120;
@@ -950,10 +984,21 @@ function loseLife() {
         player.y = CONFIG.player.startY;
         player.velocityX = 0;
         player.velocityY = 0;
+        
+        // Сообщение о причине потери жизни
+        if (reason) {
+            messageElement.textContent = `Ой, принцесса ${reason} -${1} 👑`;
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 1500);
+        }
     }
 }
 
 function showWinMessage() {
+    gameOver = true; // Останавливаем игру
+    
     const messages = [
         "🎊 ПОБЕДА ПРИНЦЕССЫ ПИЧ! 🎊",
         "С Юбилеем!",

@@ -3,8 +3,8 @@ const CONFIG = {
     player: {
         startX: 50,
         startY: 250,
-        width: 32,
-        height: 48,
+        width: 40,  // Увеличим размер для лучшего отображения изображения
+        height: 60, // Рекомендуемый размер изображения 40x60 пикселей
         speed: 5,
         jumpForce: 15,
         lives: 3
@@ -51,7 +51,7 @@ const sprites = {
         jumpLeft: null
     },
     tiles: {},
-    gifts: {}, // Изменим с items на gifts для ясности
+    gifts: {},
     background: {}
 };
 
@@ -59,153 +59,6 @@ const sprites = {
 let animationFrame = 0;
 let walkAnimationCounter = 0;
 const WALK_ANIMATION_SPEED = 8;
-
-// Функция создания принцессы Пич с короной из трёх треугольников
-function createPeachSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 48;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.clearRect(0, 0, 32, 48);
-    
-    // Тело (платье)
-    ctx.fillStyle = '#FF69B4'; // Розовое платье
-    // Платье с V-образным вырезом
-    ctx.beginPath();
-    ctx.moveTo(8, 20);
-    ctx.lineTo(24, 20);
-    ctx.lineTo(24, 45);
-    ctx.lineTo(8, 45);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Руки
-    ctx.fillStyle = '#FFE4C4'; // Телесный цвет
-    ctx.fillRect(4, 24, 4, 8); // Левая рука
-    ctx.fillRect(24, 24, 4, 8); // Правая рука
-    
-    // Голова (круглая, без пикселей)
-    ctx.beginPath();
-    ctx.arc(16, 12, 10, 0, Math.PI * 2); // Голова
-    ctx.fillStyle = '#FFE4C4';
-    ctx.fill();
-    
-    // Волосы
-    ctx.fillStyle = '#FFD700'; // Золотистые волосы
-    ctx.beginPath();
-    ctx.ellipse(16, 8, 10, 6, 0, 0, Math.PI * 2); // Верхняя часть волос
-    ctx.fill();
-    
-    // Корона с тремя треугольниками
-    ctx.fillStyle = '#FFD700';
-    
-    // Центральный треугольник короны
-    ctx.beginPath();
-    ctx.moveTo(16, 2);  // Верхняя точка
-    ctx.lineTo(12, 8);  // Левая нижняя
-    ctx.lineTo(20, 8);  // Правая нижняя
-    ctx.closePath();
-    ctx.fill();
-    
-    // Левый треугольник короны
-    ctx.beginPath();
-    ctx.moveTo(10, 4);  // Верхняя точка
-    ctx.lineTo(6, 8);   // Левая нижняя
-    ctx.lineTo(14, 8);  // Правая нижняя
-    ctx.closePath();
-    ctx.fill();
-    
-    // Правый треугольник короны
-    ctx.beginPath();
-    ctx.moveTo(22, 4);  // Верхняя точка
-    ctx.lineTo(18, 8);  // Левая нижняя
-    ctx.lineTo(26, 8);  // Правая нижняя
-    ctx.closePath();
-    ctx.fill();
-    
-    // Основание короны
-    ctx.fillRect(6, 8, 20, 2);
-    
-    // Глаза (без пикселей, простые круги)
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(12, 11, 2, 0, Math.PI * 2); // Левый глаз
-    ctx.fill();
-    
-    ctx.beginPath();
-    ctx.arc(20, 11, 2, 0, Math.PI * 2); // Правый глаз
-    ctx.fill();
-    
-    // Улыбка (дуга)
-    ctx.beginPath();
-    ctx.arc(16, 15, 4, 0.2, Math.PI - 0.2, false); // Улыбка
-    ctx.strokeStyle = '#FF1493';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    
-    // Бантик на платье
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.ellipse(16, 25, 4, 2, 0, 0, Math.PI * 2); // Центр бантика
-    ctx.fill();
-    
-    // Ленты бантика
-    ctx.beginPath();
-    ctx.moveTo(16, 25);
-    ctx.lineTo(12, 30);
-    ctx.moveTo(16, 25);
-    ctx.lineTo(20, 30);
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Ноги (ботинки)
-    ctx.fillStyle = '#8B4513'; // Коричневые ботинки
-    ctx.fillRect(10, 45, 6, 3);  // Левый ботинок
-    ctx.fillRect(16, 45, 6, 3);  // Правый ботинок
-    
-    return canvas;
-}
-
-// Функция создания спрайта подарка
-function createGiftSprite() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 30;
-    canvas.height = 30;
-    const ctx = canvas.getContext('2d');
-    
-    // Коробка подарка
-    ctx.fillStyle = '#FF4081'; // Ярко-розовый
-    ctx.fillRect(0, 0, 30, 30);
-    
-    // Обводка
-    ctx.strokeStyle = '#D32F2F';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, 28, 28);
-    
-    // Ленточка
-    ctx.fillStyle = '#FFD700'; // Золотая
-    ctx.fillRect(13, 0, 4, 30); // Вертикальная
-    ctx.fillRect(0, 13, 30, 4); // Горизонтальная
-    
-    // Бантик в центре
-    ctx.beginPath();
-    ctx.ellipse(15, 15, 6, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Концы ленты
-    ctx.beginPath();
-    ctx.moveTo(15, 18);
-    ctx.lineTo(10, 23);
-    ctx.moveTo(15, 18);
-    ctx.lineTo(20, 23);
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    return canvas;
-}
 
 // Функция загрузки спрайтов с прогрессом
 function loadSprites() {
@@ -225,38 +78,82 @@ function loadSprites() {
         }
     }
     
-    // Создаем спрайты асинхронно
-    setTimeout(() => {
-        // Принцесса Пич
-        sprites.peach.standRight = createPeachSprite();
+    // Пытаемся загрузить изображение игрока
+    loadingElement.textContent = "Загружаем изображение принцессы...";
+    
+    const playerImage = new Image();
+    playerImage.onload = function() {
+        // Если изображение загружено успешно, используем его
+        sprites.peach.standRight = playerImage;
+        sprites.peach.standLeft = createMirroredSprite(playerImage);
+        
+        // Для анимации используем то же изображение
+        sprites.peach.walkRight.push(playerImage);
+        sprites.peach.walkLeft.push(createMirroredSprite(playerImage));
+        
+        sprites.peach.jumpRight = playerImage;
+        sprites.peach.jumpLeft = createMirroredSprite(playerImage);
+        
+        updateProgress();
+        updateProgress(); // +2 для анимаций
+        updateProgress();
         updateProgress();
         
-        sprites.peach.standLeft = createMirroredSprite(sprites.peach.standRight);
-        updateProgress();
-        
-        // Для простоты используем тот же спрайт для анимации
-        sprites.peach.walkRight.push(createPeachSprite());
-        updateProgress();
-        sprites.peach.walkLeft.push(createMirroredSprite(sprites.peach.walkRight[0]));
-        updateProgress();
-        
-        sprites.peach.jumpRight = createPeachSprite();
-        updateProgress();
-        sprites.peach.jumpLeft = createMirroredSprite(sprites.peach.jumpRight);
-        updateProgress();
-        
+        // Создаем остальные спрайты
+        createOtherSprites();
+    };
+    
+    playerImage.onerror = function() {
+        // Если изображение не загрузилось, создаем программный спрайт
+        console.warn("Не удалось загрузить изображение игрока, создаем программный спрайт");
+        createProgrammaticSprites();
+        createOtherSprites();
+    };
+    
+    // Пробуем загрузить изображение из разных мест
+    playerImage.src = 'images/peach.png';
+    
+    function createOtherSprites() {
         // Блоки
         sprites.tiles.ground = createSimpleSprite(32, 32, '#8B4513', 'brick');
         updateProgress();
         sprites.tiles.brick = createSimpleSprite(32, 32, '#C04000', 'brick');
         updateProgress();
         
-        // Подарки
-        sprites.gifts.gift = createGiftSprite();
+        // Подарок
+        const giftCanvas = document.createElement('canvas');
+        giftCanvas.width = 30;
+        giftCanvas.height = 30;
+        const giftCtx = giftCanvas.getContext('2d');
+        
+        giftCtx.fillStyle = '#FF4081';
+        giftCtx.fillRect(0, 0, 30, 30);
+        
+        giftCtx.fillStyle = '#FFD700';
+        giftCtx.fillRect(13, 0, 4, 30);
+        giftCtx.fillRect(0, 13, 30, 4);
+        
+        sprites.gifts.gift = giftCanvas;
         updateProgress();
         
         // Флаг
-        sprites.gifts.flag = createSimpleSprite(40, 150, '#FF69B4', 'flag');
+        const flagCanvas = document.createElement('canvas');
+        flagCanvas.width = 40;
+        flagCanvas.height = 150;
+        const flagCtx = flagCanvas.getContext('2d');
+        
+        flagCtx.fillStyle = '#8B4513';
+        flagCtx.fillRect(18, 0, 4, 150);
+        
+        flagCtx.fillStyle = '#FF69B4';
+        flagCtx.beginPath();
+        flagCtx.moveTo(22, 30);
+        flagCtx.lineTo(40, 20);
+        flagCtx.lineTo(22, 50);
+        flagCtx.closePath();
+        flagCtx.fill();
+        
+        sprites.gifts.flag = flagCanvas;
         updateProgress();
         
         // Облако
@@ -271,10 +168,74 @@ function loadSprites() {
         sprites.background.cloud = cloudCanvas;
         updateProgress();
         
-    }, 50);
+        // Куст
+        const bushCanvas = document.createElement('canvas');
+        bushCanvas.width = 60;
+        bushCanvas.height = 40;
+        const bushCtx = bushCanvas.getContext('2d');
+        bushCtx.fillStyle = '#228B22';
+        bushCtx.beginPath();
+        bushCtx.arc(30, 20, 20, 0, Math.PI * 2);
+        bushCtx.fill();
+        sprites.background.bush = bushCanvas;
+        updateProgress();
+    }
+    
+    function createProgrammaticSprites() {
+        // Создаем программный спрайт принцессы
+        const peachCanvas = document.createElement('canvas');
+        peachCanvas.width = 40;
+        peachCanvas.height = 60;
+        const peachCtx = peachCanvas.getContext('2d');
+        
+        // Рисуем простую принцессу
+        peachCtx.fillStyle = '#FF69B4';
+        peachCtx.fillRect(10, 20, 20, 30); // Платье
+        
+        peachCtx.fillStyle = '#FFE4C4';
+        peachCtx.beginPath();
+        peachCtx.arc(20, 15, 10, 0, Math.PI * 2); // Голова
+        peachCtx.fill();
+        
+        peachCtx.fillStyle = '#FFD700';
+        // Корона с тремя треугольниками
+        peachCtx.beginPath();
+        peachCtx.moveTo(20, 5);  // Центральный
+        peachCtx.lineTo(15, 10);
+        peachCtx.lineTo(25, 10);
+        peachCtx.closePath();
+        peachCtx.fill();
+        
+        peachCtx.beginPath();
+        peachCtx.moveTo(12, 7);  // Левый
+        peachCtx.lineTo(7, 12);
+        peachCtx.lineTo(17, 12);
+        peachCtx.closePath();
+        peachCtx.fill();
+        
+        peachCtx.beginPath();
+        peachCtx.moveTo(28, 7);  // Правый
+        peachCtx.lineTo(23, 12);
+        peachCtx.lineTo(33, 12);
+        peachCtx.closePath();
+        peachCtx.fill();
+        
+        peachCtx.fillRect(7, 12, 26, 2); // Основание короны
+        
+        sprites.peach.standRight = peachCanvas;
+        sprites.peach.standLeft = createMirroredSprite(peachCanvas);
+        sprites.peach.walkRight.push(peachCanvas);
+        sprites.peach.walkLeft.push(createMirroredSprite(peachCanvas));
+        sprites.peach.jumpRight = peachCanvas;
+        sprites.peach.jumpLeft = createMirroredSprite(peachCanvas);
+        
+        updateProgress();
+        updateProgress();
+        updateProgress();
+        updateProgress();
+    }
 }
 
-// Вспомогательная функция для создания простых спрайтов
 function createSimpleSprite(width, height, color, type) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -284,7 +245,6 @@ function createSimpleSprite(width, height, color, type) {
     ctx.clearRect(0, 0, width, height);
     
     if (type === 'brick') {
-        // Кирпичный блок
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         
@@ -292,39 +252,6 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
-    } else if (type === 'flag') {
-        // Флаг
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(width/2 - 3, 0, 6, height); // Флагшток
-        
-        ctx.fillStyle = color;
-        ctx.fillRect(width/2, 30, 20, 15); // Флаг
-        
-        // Корона на флаге
-        ctx.fillStyle = '#FFD700';
-        // Центральный треугольник
-        ctx.beginPath();
-        ctx.moveTo(width/2 + 25, 35);
-        ctx.lineTo(width/2 + 22, 40);
-        ctx.lineTo(width/2 + 28, 40);
-        ctx.closePath();
-        ctx.fill();
-        // Левый треугольник
-        ctx.beginPath();
-        ctx.moveTo(width/2 + 20, 37);
-        ctx.lineTo(width/2 + 17, 42);
-        ctx.lineTo(width/2 + 23, 42);
-        ctx.closePath();
-        ctx.fill();
-        // Правый треугольник
-        ctx.beginPath();
-        ctx.moveTo(width/2 + 30, 37);
-        ctx.lineTo(width/2 + 27, 42);
-        ctx.lineTo(width/2 + 33, 42);
-        ctx.closePath();
-        ctx.fill();
-        // Основание короны
-        ctx.fillRect(width/2 + 17, 42, 16, 2);
     }
     
     return canvas;
@@ -377,7 +304,7 @@ let platforms = [
     {x: 650, y: 180, width: 64, height: 32, type: 'brick'}
 ];
 
-// Подарки (счет от 1 до 5)
+// Подарки (5 штук, счет от 1 до 5)
 let gifts = [
     {x: 180, y: 240, width: 30, height: 30, collected: false, type: 'gift'},
     {x: 350, y: 180, width: 30, height: 30, collected: false, type: 'gift'},
@@ -399,7 +326,7 @@ let bushes = [
     {x: 550, y: CONFIG.world.groundLevel - 30, width: 70, height: 45}
 ];
 
-let score = 0; // Теперь это количество собранных подарков (0-5)
+let score = 0; // Количество собранных подарков
 let gameOver = false;
 let gameWin = false;
 const keys = {};
@@ -438,16 +365,24 @@ function initGame() {
     
     gifts.forEach(gift => gift.collected = false);
     flag.reached = false;
-    score = 0; // Сбрасываем счетчик подарков
+    score = 0;
     gameOver = false;
     gameWin = false;
     backgroundOffset = 0;
-    scoreElement.textContent = `${score}/5`; // Формат: 0/5
+    
+    // Обновляем отображение счета
+    updateScoreDisplay();
+    
     livesElement.textContent = '👑'.repeat(player.lives);
     messageElement.style.display = 'none';
     floatingMessages = [];
     
     gameLoop();
+}
+
+// Функция для обновления отображения счета
+function updateScoreDisplay() {
+    scoreElement.textContent = `${score}/${gifts.length}`;
 }
 
 function gameLoop() {
@@ -516,7 +451,7 @@ function update() {
         }
     });
     
-    // Сбор подарков (теперь увеличиваем на 1, не на 200)
+    // Сбор подарков
     gifts.forEach((gift, index) => {
         if (!gift.collected &&
             player.x < gift.x + gift.width &&
@@ -526,7 +461,7 @@ function update() {
             
             gift.collected = true;
             score++; // Увеличиваем на 1
-            scoreElement.textContent = `${score}/5`; // Обновляем отображение
+            updateScoreDisplay(); // Обновляем отображение
             
             // Показываем сообщение
             showFloatingMessage(
@@ -554,10 +489,10 @@ function update() {
         player.y + player.height > flag.y) {
         
         flag.reached = true;
-        if (score === gifts.length) { // Проверяем, что собраны ВСЕ 5 подарков
+        if (score === gifts.length) {
             gameWin = true;
         } else {
-            messageElement.textContent = `Сначала собери все подарки! (${score}/5)`;
+            messageElement.textContent = `Сначала собери все подарки! (${score}/${gifts.length})`;
             messageElement.style.display = 'block';
             setTimeout(() => {
                 messageElement.style.display = 'none';
@@ -606,10 +541,9 @@ function draw() {
     
     // Кусты
     bushes.forEach(bush => {
-        ctx.fillStyle = '#228B22';
-        ctx.beginPath();
-        ctx.arc(bush.x + bush.width/2, bush.y + bush.height/2, bush.width/2, 0, Math.PI * 2);
-        ctx.fill();
+        if (sprites.background.bush) {
+            ctx.drawImage(sprites.background.bush, bush.x, bush.y, bush.width, bush.height);
+        }
     });
     
     // Платформы
@@ -689,32 +623,6 @@ function draw() {
         ctx.closePath();
         ctx.fill();
         
-        // Корона на флаге победы
-        ctx.fillStyle = '#FFD700';
-        // Центральный треугольник
-        ctx.beginPath();
-        ctx.moveTo(10, -30);
-        ctx.lineTo(7, -25);
-        ctx.lineTo(13, -25);
-        ctx.closePath();
-        ctx.fill();
-        // Левый треугольник
-        ctx.beginPath();
-        ctx.moveTo(4, -28);
-        ctx.lineTo(1, -23);
-        ctx.lineTo(7, -23);
-        ctx.closePath();
-        ctx.fill();
-        // Правый треугольник
-        ctx.beginPath();
-        ctx.moveTo(16, -28);
-        ctx.lineTo(13, -23);
-        ctx.lineTo(19, -23);
-        ctx.closePath();
-        ctx.fill();
-        // Основание короны
-        ctx.fillRect(1, -23, 18, 2);
-        
         ctx.restore();
     }
 }
@@ -742,7 +650,7 @@ function showWinMessage() {
     const messages = [
         "🎊 ПОБЕДА ПРИНЦЕССЫ ПИЧ! 🎊",
         "С Юбилеем!",
-        "Все 5 подарков собраны!",
+        `Все ${gifts.length} подарков собраны!`,
         "Королевство спасено! 👑"
     ];
     

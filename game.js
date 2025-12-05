@@ -17,6 +17,76 @@ const CONFIG = {
     }
 };
 
+// ===================== АУДИО =====================
+const audio = {
+    backgroundMusic: null,
+    jumpSound: null,
+    collectSound: null,
+    winSound: null,
+    hurtSound: null,
+    
+    init: function() {
+        // Фоновая музыка
+        this.backgroundMusic = document.getElementById('backgroundMusic');
+        if (this.backgroundMusic) {
+            this.backgroundMusic.volume = 0.3;
+            this.backgroundMusic.loop = true;
+        }
+        
+        // Создаем звуковые эффекты
+        this.createSounds();
+    },
+    
+    createSounds: function() {
+        // Звук прыжка
+        this.jumpSound = this.createBeepSound(523.25, 0.1); // До
+        this.collectSound = this.createBeepSound(659.25, 0.2); // Ми
+        this.winSound = this.createBeepSound(783.99, 0.5); // Соль
+        this.hurtSound = this.createBeepSound(220, 0.3); // Ля низкое
+    },
+    
+    createBeepSound: function(frequency, duration) {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+        
+        return { frequency, duration };
+    },
+    
+    playJump: function() {
+        if (this.jumpSound) this.createBeepSound(this.jumpSound.frequency, this.jumpSound.duration);
+    },
+    
+    playCollect: function() {
+        if (this.collectSound) this.createBeepSound(this.collectSound.frequency, this.collectSound.duration);
+    },
+    
+    playWin: function() {
+        if (this.winSound) {
+            // Воспроизводим аккорд победы
+            this.createBeepSound(783.99, 0.3); // Соль
+            setTimeout(() => this.createBeepSound(659.25, 0.3), 100); // Ми
+            setTimeout(() => this.createBeepSound(523.25, 0.5), 200); // До
+        }
+    },
+    
+    playHurt: function() {
+        if (this.hurtSound) this.createBeepSound(this.hurtSound.frequency, this.hurtSound.duration);
+    }
+};
+
 // ===================== ИНИЦИАЛИЗАЦИЯ =====================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');

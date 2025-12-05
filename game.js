@@ -394,7 +394,7 @@ let platforms = [
     {x: 650, y: 180, width: 64, height: 32, type: 'platform'}
 ];
 
-// Подарки (5 штук, счет от 1 до 5)
+// Подарки (счет от 1 до 5)
 let gifts = [
     {x: 180, y: 240, width: 30, height: 30, collected: false, type: 'gift'},
     {x: 350, y: 180, width: 30, height: 30, collected: false, type: 'gift'},

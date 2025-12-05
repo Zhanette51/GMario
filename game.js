@@ -49,7 +49,8 @@ const images = {
     platform: null,
     clouds: null,
     background_mountains: null,
-    grass: null
+    grass: null,
+    dog: null // Добавили собаку
 };
 
 // Размеры спрайтов
@@ -58,10 +59,11 @@ const spriteSizes = {
     gift: { width: 30, height: 30 },
     flag: { width: 40, height: 150 },
     ground: { width: 32, height: 32 },
-    platform: { width: 32, height: 32 },
+    platform: { width: 32, height: 80 }, // Изменено: высота 80 (32 + 48)
     clouds: { width: 80, height: 40 },
     background_mountains: { width: 240, height: 200 },
-    grass: { width: 32, height: 66 }
+    grass: { width: 32, height: 66 },
+    dog: { width: 60, height: 40 } // Собака в половину размера игрока (60x40)
 };
 
 // Спрайты для игры
@@ -73,6 +75,12 @@ const sprites = {
         walkLeft: [],
         jumpRight: null,
         jumpLeft: null
+    },
+    dog: {
+        runRight: null,
+        runLeft: null,
+        idleRight: null,
+        idleLeft: null
     },
     tiles: {},
     gifts: {},
@@ -88,11 +96,13 @@ const BIRD_INTERVAL = 2500;
 let animationFrame = 0;
 let walkAnimationCounter = 0;
 const WALK_ANIMATION_SPEED = 8;
+let dogAnimationCounter = 0;
+const DOG_ANIMATION_SPEED = 6;
 
 // Функция загрузки изображений
 function loadSprites() {
     let loadedCount = 0;
-    const totalImages = 8;
+    const totalImages = 9; // Увеличили на 1 (добавили собаку)
     
     function updateProgress() {
         loadedCount++;
@@ -116,7 +126,8 @@ function loadSprites() {
         { name: 'platform', path: 'images/platform.png' },
         { name: 'clouds', path: 'images/clouds.png' },
         { name: 'background_mountains', path: 'images/background_mountains.png' },
-        { name: 'grass', path: 'images/grass.png' }
+        { name: 'grass', path: 'images/grass.png' },
+        { name: 'dog', path: 'images/dog.png' } // Добавили собаку
     ];
     
     imageFiles.forEach(imgData => {
@@ -148,6 +159,16 @@ function createSpritesFromImages() {
         createFallbackPeachSprites();
     }
     
+    // Собака
+    if (images.dog) {
+        sprites.dog.runRight = images.dog;
+        sprites.dog.runLeft = createMirroredImage(images.dog);
+        sprites.dog.idleRight = images.dog;
+        sprites.dog.idleLeft = createMirroredImage(images.dog);
+    } else {
+        createFallbackDogSprites();
+    }
+    
     // Блоки и платформы
     if (images.ground) {
         sprites.tiles.ground = images.ground;
@@ -156,9 +177,24 @@ function createSpritesFromImages() {
     }
     
     if (images.platform) {
-        sprites.tiles.platform = images.platform;
+        // Создаем новый спрайт платформы с растяжением вниз на 48 пикселей
+        const platformCanvas = document.createElement('canvas');
+        platformCanvas.width = spriteSizes.platform.width;
+        platformCanvas.height = spriteSizes.platform.height; // 80 пикселей
+        const platformCtx = platformCanvas.getContext('2d');
+        
+        // Рисуем оригинальное изображение платформы (32x32) в верхней части
+        platformCtx.drawImage(images.platform, 0, 0, 32, 32);
+        
+        // Растягиваем нижнюю 1 пиксельную линию на оставшиеся 48 пикселей
+        const imageData = platformCtx.getImageData(0, 31, 32, 1); // Берем последнюю строку
+        for (let y = 32; y < 80; y++) {
+            platformCtx.putImageData(imageData, 0, y);
+        }
+        
+        sprites.tiles.platform = platformCanvas;
     } else {
-        sprites.tiles.platform = createSimpleSprite(32, 32, '#C04000', 'brick');
+        sprites.tiles.platform = createSimpleSprite(32, 80, '#C04000', 'platform'); // Высота 80
     }
     
     // Трава
@@ -312,6 +348,9 @@ function createFallbackSprite(type) {
         case 'peach':
             createFallbackPeachSprites();
             break;
+        case 'dog':
+            createFallbackDogSprites();
+            break;
         case 'gift':
             images.gift = createSimpleSprite(30, 30, '#FF4081', 'gift');
             break;
@@ -322,7 +361,7 @@ function createFallbackSprite(type) {
             images.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
             break;
         case 'platform':
-            images.platform = createSimpleSprite(32, 32, '#C04000', 'platform');
+            images.platform = createSimpleSprite(32, 80, '#C04000', 'platform'); // Высота 80
             break;
         case 'grass':
             images.grass = createSimpleSprite(32, 66, '#7CFC00', 'grass');
@@ -396,6 +435,47 @@ function createFallbackPeachSprites() {
     images.peach = peachCanvas;
 }
 
+function createFallbackDogSprites() {
+    const dogCanvas = document.createElement('canvas');
+    dogCanvas.width = 60;
+    dogCanvas.height = 40;
+    const dogCtx = dogCanvas.getContext('2d');
+    
+    // Простое изображение собаки (коричневый прямоугольник)
+    dogCtx.fillStyle = '#8B4513'; // Коричневый цвет
+    dogCtx.fillRect(10, 15, 40, 20); // Тело
+    
+    // Голова
+    dogCtx.fillStyle = '#A0522D'; // Светло-коричневый
+    dogCtx.fillRect(5, 10, 15, 15);
+    
+    // Уши
+    dogCtx.fillStyle = '#5D2906'; // Темно-коричневый
+    dogCtx.fillRect(3, 8, 8, 5);
+    dogCtx.fillRect(14, 8, 8, 5);
+    
+    // Ноги
+    dogCtx.fillStyle = '#8B4513';
+    dogCtx.fillRect(12, 35, 8, 5);
+    dogCtx.fillRect(25, 35, 8, 5);
+    dogCtx.fillRect(38, 35, 8, 5);
+    
+    // Хвост
+    dogCtx.fillStyle = '#A0522D';
+    dogCtx.fillRect(50, 20, 8, 3);
+    
+    // Глаза
+    dogCtx.fillStyle = '#FFFFFF';
+    dogCtx.fillRect(8, 15, 3, 3);
+    dogCtx.fillRect(14, 15, 3, 3);
+    
+    // Нос
+    dogCtx.fillStyle = '#000000';
+    dogCtx.fillRect(5, 20, 4, 2);
+    
+    images.dog = dogCanvas;
+}
+
 function createSimpleSprite(width, height, color, type) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -404,7 +484,7 @@ function createSimpleSprite(width, height, color, type) {
     
     ctx.clearRect(0, 0, width, height);
     
-    if (type === 'ground' || type === 'brick') {
+    if (type === 'ground') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         
@@ -412,6 +492,20 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
+    } else if (type === 'platform') {
+        // Платформа с растяжением вниз (высота 80)
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Полоски только в верхней части (первые 32 пикселя)
+        ctx.fillStyle = darkenColor(color, 30);
+        for (let x = 4; x < width; x += 8) {
+            ctx.fillRect(x, 0, 2, 32);
+        }
+        
+        // Нижняя часть (оставшиеся 48 пикселей) - немного темнее
+        ctx.fillStyle = darkenColor(color, 15);
+        ctx.fillRect(0, 32, width, height - 32);
     } else if (type === 'grass') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
@@ -466,6 +560,22 @@ let player = {
     invincible: false,
     invincibleTimer: 0,
     isJumping: false
+};
+
+// Собака
+let dog = {
+    x: CONFIG.player.startX - 100, // Начинаем немного позади игрока
+    y: CONFIG.world.groundLevel - 40, // На земле, высота собаки 40
+    width: spriteSizes.dog.width,
+    height: spriteSizes.dog.height,
+    velocityX: 0,
+    facingRight: true,
+    speed: 2.5, // Скорость собаки (немного медленнее игрока)
+    followDistance: 150, // Дистанция, на которой собака начинает преследование
+    idleTime: 0,
+    isRunning: false,
+    barkTimer: 0,
+    barkInterval: 120 // Собака будет гавкать каждые 120 кадров
 };
 
 // Платформы (только ground и platform)
@@ -524,7 +634,6 @@ restartButton.addEventListener('click', resetGame);
 
 // ===================== ОСНОВНЫЕ ФУНКЦИИ =====================
 function initGame() {
-    // Начинаем игру с платформы, а не с воздуха
     player = {
         x: CONFIG.player.startX,
         y: CONFIG.player.startY,
@@ -538,6 +647,21 @@ function initGame() {
         invincible: false,
         invincibleTimer: 0,
         isJumping: false
+    };
+    
+    dog = {
+        x: CONFIG.player.startX - 100,
+        y: CONFIG.world.groundLevel - 40,
+        width: spriteSizes.dog.width,
+        height: spriteSizes.dog.height,
+        velocityX: 0,
+        facingRight: true,
+        speed: 2.5,
+        followDistance: 150,
+        idleTime: 0,
+        isRunning: false,
+        barkTimer: 0,
+        barkInterval: 120
     };
     
     // Инициализируем игрока на земле
@@ -580,6 +704,7 @@ function gameLoop() {
     update();
     draw();
     animationFrame++;
+    dogAnimationCounter++;
     requestAnimationFrame(gameLoop);
 }
 
@@ -617,12 +742,9 @@ function update() {
     // Проверяем столкновение с платформами по X
     platforms.forEach(platform => {
         if (checkCollision(player, platform)) {
-            // Если столкнулись по горизонтали, возвращаем старую позицию
             if (player.velocityX > 0) {
-                // Двигались вправо
                 player.x = platform.x - player.width;
             } else if (player.velocityX < 0) {
-                // Двигались влево
                 player.x = platform.x + platform.width;
             }
             player.velocityX = 0;
@@ -637,13 +759,11 @@ function update() {
     platforms.forEach(platform => {
         if (checkCollision(player, platform)) {
             if (player.velocityY > 0) {
-                // Падаем вниз - ставим на платформу
                 player.y = platform.y - player.height;
                 player.velocityY = 0;
                 player.isOnGround = true;
                 player.isJumping = false;
             } else if (player.velocityY < 0) {
-                // Прыгаем вверх - ударяемся головой
                 player.y = platform.y + platform.height;
                 player.velocityY = 0;
             }
@@ -659,6 +779,9 @@ function update() {
         loseLife();
         return;
     }
+    
+    // Обновление поведения собаки
+    updateDog();
     
     // Сбор подарков
     gifts.forEach((gift, index) => {
@@ -736,6 +859,69 @@ function update() {
             birds.splice(i, 1);
         }
     }
+}
+
+function updateDog() {
+    // Собака гавкает
+    dog.barkTimer++;
+    if (dog.barkTimer >= dog.barkInterval) {
+        dog.barkTimer = 0;
+        // С небольшой вероятностью создаем облачко с текстом
+        if (Math.random() < 0.3) {
+            showFloatingMessage("Гав!", dog.x + dog.width/2, dog.y - 10);
+        }
+    }
+    
+    // Вычисляем дистанцию до игрока
+    const distanceToPlayer = Math.abs(player.x - dog.x);
+    
+    // Если игрок слишком далеко, собака бежит за ним
+    if (distanceToPlayer > dog.followDistance) {
+        dog.isRunning = true;
+        dog.idleTime = 0;
+        
+        // Определяем направление к игроку
+        if (player.x > dog.x) {
+            dog.velocityX = dog.speed;
+            dog.facingRight = true;
+        } else {
+            dog.velocityX = -dog.speed;
+            dog.facingRight = false;
+        }
+    } else {
+        // Если близко, собака может немного постоять
+        dog.isRunning = false;
+        dog.idleTime++;
+        dog.velocityX = 0;
+        
+        // Случайно меняет направление взгляда
+        if (dog.idleTime > 60 && Math.random() < 0.01) {
+            dog.facingRight = !dog.facingRight;
+            dog.idleTime = 0;
+        }
+    }
+    
+    // Обновляем позицию собаки
+    dog.x += dog.velocityX;
+    
+    // Не даем собаке выходить за границы экрана
+    if (dog.x < 0) dog.x = 0;
+    if (dog.x > canvas.width - dog.width) dog.x = canvas.width - dog.width;
+    
+    // Собака всегда на земле
+    dog.y = CONFIG.world.groundLevel - dog.height;
+    
+    // Собака не должна заходить на платформы (только бегает по земле)
+    platforms.forEach(platform => {
+        if (platform.type === 'platform' && checkCollision(dog, platform)) {
+            if (dog.velocityX > 0) {
+                dog.x = platform.x - dog.width;
+            } else if (dog.velocityX < 0) {
+                dog.x = platform.x + platform.width;
+            }
+            dog.velocityX = 0;
+        }
+    });
 }
 
 function draw() {
@@ -825,14 +1011,15 @@ function draw() {
                 }
             }
         } else if (platform.type === 'platform' && sprites.tiles.platform) {
-            // Летающие островки
+            // Летающие островки (теперь высота 80 пикселей)
             for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.platform.width) {
+                // Рисуем платформу с растяжением вниз
                 ctx.drawImage(
                     sprites.tiles.platform, 
                     x, 
-                    platform.y, 
+                    platform.y, // Верх платформы остается на той же высоте
                     spriteSizes.platform.width, 
-                    spriteSizes.platform.height
+                    spriteSizes.platform.height // Высота теперь 80
                 );
             }
         }
@@ -853,6 +1040,64 @@ function draw() {
                 }
             }
         });
+    }
+    
+    // Собака (рисуется до игрока, чтобы быть на заднем плане)
+    let dogSprite;
+    if (dog.isRunning) {
+        // Анимация бега собаки
+        const runFrame = Math.floor(dogAnimationCounter / DOG_ANIMATION_SPEED) % 2;
+        if (runFrame === 0) {
+            dogSprite = dog.facingRight ? sprites.dog.runRight : sprites.dog.runLeft;
+        } else {
+            // Второй кадр бега - немного приподнятая собака
+            ctx.save();
+            const yOffset = Math.sin(dogAnimationCounter / DOG_ANIMATION_SPEED * Math.PI) * 2;
+            if (dog.facingRight) {
+                if (sprites.dog.runRight) {
+                    ctx.drawImage(
+                        sprites.dog.runRight, 
+                        dog.x, 
+                        dog.y - yOffset, 
+                        dog.width, 
+                        dog.height
+                    );
+                }
+            } else {
+                if (sprites.dog.runLeft) {
+                    ctx.drawImage(
+                        sprites.dog.runLeft, 
+                        dog.x, 
+                        dog.y - yOffset, 
+                        dog.width, 
+                        dog.height
+                    );
+                }
+            }
+            ctx.restore();
+            dogSprite = null; // Уже нарисовали
+        }
+    } else {
+        dogSprite = dog.facingRight ? sprites.dog.idleRight : sprites.dog.idleLeft;
+    }
+    
+    if (dogSprite) {
+        ctx.drawImage(
+            dogSprite, 
+            dog.x, 
+            dog.y, 
+            dog.width, 
+            dog.height
+        );
+    }
+    
+    // Следы от лап собаки (когда бежит)
+    if (dog.isRunning && Math.floor(dogAnimationCounter / 10) % 3 === 0) {
+        ctx.fillStyle = 'rgba(139, 69, 19, 0.5)';
+        const pawX = dog.facingRight ? dog.x - 5 : dog.x + dog.width + 5;
+        ctx.beginPath();
+        ctx.arc(pawX, dog.y + dog.height - 5, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
     
     // Игрок
@@ -971,6 +1216,10 @@ function loseLife() {
         player.velocityX = 0;
         player.velocityY = 0;
         
+        // Собака также возвращается к игроку
+        dog.x = player.x - 100;
+        dog.y = CONFIG.world.groundLevel - 40;
+        
         // Ставим игрока на платформу при возрождении
         platforms.forEach(platform => {
             if (checkCollision(player, platform)) {
@@ -986,7 +1235,8 @@ function showWinMessage() {
         "🎊 ПОБЕДА ПРИНЦЕССЫ ПИЧ! 🎊",
         "С Юбилеем!",
         `Все ${gifts.length} подарков собраны!`,
-        "Королевство спасено! 👑"
+        "Королевство спасено! 👑",
+        "И собачка довольна! 🐕"
     ];
     
     let message = messages[0];

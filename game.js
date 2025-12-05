@@ -2,17 +2,17 @@
 const CONFIG = {
     player: {
         startX: 50,
-        startY: 250, // Будем корректировать после загрузки изображения
-        width: 120,   // Увеличиваем в 3 раза (было 40)
-        height: 180,  // Увеличиваем в 3 раза (было 60)
+        startY: 250,
+        width: 120,   // Принцесса в 3 раза больше
+        height: 180,
         speed: 5,
-        jumpForce: 15,
+        jumpForce: 16, // Увеличим для большей прыгучести
         lives: 3
     },
     gravity: 0.8,
     world: {
         groundLevel: 350,
-        skyColor: '#5c94fc',
+        skyColor: '#87CEEB', // Более светлое небо
         backgroundSpeed: 0.5
     }
 };
@@ -46,7 +46,6 @@ const images = {
     gift: null,
     flag: null,
     ground: null,
-    grass: null,
     platform: null,
     clouds: null,
     background_mountains: null
@@ -58,10 +57,9 @@ const spriteSizes = {
     gift: { width: 30, height: 30 },        // Без изменений
     flag: { width: 40, height: 150 },       // Без изменений
     ground: { width: 32, height: 32 },      // Без изменений
-    grass: { width: 160, height: 160 },     // В 5 раз больше (32*5=160)
-    platform: { width: 96, height: 96 },    // В 3 раза больше (32*3=96)
+    platform: { width: 32, height: 32 },    // Островки обратно в 1x
     clouds: { width: 80, height: 40 },      // Без изменений
-    background_mountains: { width: 120, height: 80 } // Без изменений
+    background_mountains: { width: 240, height: 200 } // Выше в 2 раза
 };
 
 // Спрайты для игры
@@ -79,6 +77,11 @@ const sprites = {
     background: {}
 };
 
+// Птички для анимации
+const birds = [];
+let lastBirdTime = 0;
+const BIRD_INTERVAL = 2000; // Птичка каждые 2 секунды
+
 // Параметры анимации
 let animationFrame = 0;
 let walkAnimationCounter = 0;
@@ -87,7 +90,7 @@ const WALK_ANIMATION_SPEED = 8;
 // Функция загрузки изображений
 function loadSprites() {
     let loadedCount = 0;
-    const totalImages = 8; // Всего изображений для загрузки
+    const totalImages = 7; // Теперь 7 изображений (без травы)
     
     function updateProgress() {
         loadedCount++;
@@ -104,13 +107,12 @@ function loadSprites() {
         }
     }
     
-    // Массив изображений для загрузки
+    // Массив изображений для загрузки (без grass)
     const imageFiles = [
         { name: 'peach', path: 'images/peach.png' },
         { name: 'gift', path: 'images/gift.png' },
         { name: 'flag', path: 'images/flag.png' },
         { name: 'ground', path: 'images/ground.png' },
-        { name: 'grass', path: 'images/grass.png' },
         { name: 'platform', path: 'images/platform.png' },
         { name: 'clouds', path: 'images/clouds.png' },
         { name: 'background_mountains', path: 'images/background_mountains.png' }
@@ -125,7 +127,6 @@ function loadSprites() {
         };
         img.onerror = function() {
             console.warn(`Не удалось загрузить изображение: ${imgData.path}`);
-            // Создаем простой спрайт вместо изображения
             createFallbackSprite(imgData.name);
             updateProgress();
         };
@@ -154,16 +155,10 @@ function createSpritesFromImages() {
         sprites.tiles.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
     }
     
-    if (images.grass) {
-        sprites.tiles.grass = images.grass;
-    } else {
-        sprites.tiles.grass = createSimpleSprite(160, 160, '#7CFC00', 'grass');
-    }
-    
     if (images.platform) {
         sprites.tiles.platform = images.platform;
     } else {
-        sprites.tiles.platform = createSimpleSprite(96, 96, '#C04000', 'brick');
+        sprites.tiles.platform = createSimpleSprite(32, 32, '#C04000', 'brick');
     }
     
     // Подарки и флаг
@@ -198,18 +193,73 @@ function createSpritesFromImages() {
         sprites.background.mountains = images.background_mountains;
     } else {
         const mountainCanvas = document.createElement('canvas');
-        mountainCanvas.width = 120;
-        mountainCanvas.height = 80;
+        mountainCanvas.width = 240;
+        mountainCanvas.height = 200;
         const mountainCtx = mountainCanvas.getContext('2d');
         mountainCtx.fillStyle = '#8B4513';
         mountainCtx.beginPath();
-        mountainCtx.moveTo(0, 80);
-        mountainCtx.lineTo(60, 0);
-        mountainCtx.lineTo(120, 80);
+        mountainCtx.moveTo(0, 200);
+        mountainCtx.lineTo(120, 0);
+        mountainCtx.lineTo(240, 200);
         mountainCtx.closePath();
         mountainCtx.fill();
         sprites.background.mountains = mountainCanvas;
     }
+}
+
+// Функция создания птички
+function createBird() {
+    return {
+        x: -20, // Начинаем за экраном слева
+        y: 30 + Math.random() * 100, // Случайная высота
+        width: 20,
+        height: 15,
+        speed: 1.5 + Math.random() * 1, // Случайная скорость
+        wingPhase: Math.random() * Math.PI * 2, // Фаза взмаха крыльев
+        wingSpeed: 0.1 + Math.random() * 0.1,
+        color: ['#8B4513', '#A0522D', '#D2691E'][Math.floor(Math.random() * 3)],
+        update: function() {
+            this.x += this.speed;
+            this.wingPhase += this.wingSpeed;
+            return this.x < canvas.width + 50; // Удаляем, если улетела за правый край
+        },
+        draw: function(ctx) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            // Тело птички
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.width/2, this.height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Крылья
+            const wingHeight = Math.sin(this.wingPhase) * 5;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-8, wingHeight);
+            ctx.lineTo(8, wingHeight);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Клюв
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(this.width/2, 0);
+            ctx.lineTo(this.width/2 + 5, -2);
+            ctx.lineTo(this.width/2 + 5, 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Глаз
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(3, -3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+    };
 }
 
 // Функция создания зеркального отражения изображения
@@ -241,11 +291,8 @@ function createFallbackSprite(type) {
         case 'ground':
             images.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
             break;
-        case 'grass':
-            images.grass = createSimpleSprite(160, 160, '#7CFC00', 'grass');
-            break;
         case 'platform':
-            images.platform = createSimpleSprite(96, 96, '#C04000', 'platform');
+            images.platform = createSimpleSprite(32, 32, '#C04000', 'platform');
             break;
         case 'clouds':
             const cloudCanvas = document.createElement('canvas');
@@ -260,14 +307,14 @@ function createFallbackSprite(type) {
             break;
         case 'background_mountains':
             const mountainCanvas = document.createElement('canvas');
-            mountainCanvas.width = 120;
-            mountainCanvas.height = 80;
+            mountainCanvas.width = 240;
+            mountainCanvas.height = 200;
             const mountainCtx = mountainCanvas.getContext('2d');
             mountainCtx.fillStyle = '#8B4513';
             mountainCtx.beginPath();
-            mountainCtx.moveTo(0, 80);
-            mountainCtx.lineTo(60, 0);
-            mountainCtx.lineTo(120, 80);
+            mountainCtx.moveTo(0, 200);
+            mountainCtx.lineTo(120, 0);
+            mountainCtx.lineTo(240, 200);
             mountainCtx.closePath();
             mountainCtx.fill();
             images.background_mountains = mountainCanvas;
@@ -278,43 +325,42 @@ function createFallbackSprite(type) {
 function createFallbackPeachSprites() {
     // Создаем простую принцессу Пич (в 3 раза больше)
     const peachCanvas = document.createElement('canvas');
-    peachCanvas.width = 120;   // В 3 раза больше
-    peachCanvas.height = 180;  // В 3 раза больше
+    peachCanvas.width = 120;
+    peachCanvas.height = 180;
     const peachCtx = peachCanvas.getContext('2d');
     
     // Рисуем принцессу в увеличенном размере
     peachCtx.fillStyle = '#FF69B4';
-    peachCtx.fillRect(30, 60, 60, 90); // Платье (в 3 раза больше)
+    peachCtx.fillRect(30, 60, 60, 90);
     
     peachCtx.fillStyle = '#FFE4C4';
     peachCtx.beginPath();
-    peachCtx.arc(60, 45, 30, 0, Math.PI * 2); // Голова (в 3 раза больше)
+    peachCtx.arc(60, 45, 30, 0, Math.PI * 2);
     peachCtx.fill();
     
-    // Корона с тремя треугольниками (увеличиваем в 3 раза)
+    // Корона с тремя треугольниками
     peachCtx.fillStyle = '#FFD700';
-    // Центральный треугольник
     peachCtx.beginPath();
     peachCtx.moveTo(60, 15);
     peachCtx.lineTo(45, 30);
     peachCtx.lineTo(75, 30);
     peachCtx.closePath();
     peachCtx.fill();
-    // Левый треугольник
+    
     peachCtx.beginPath();
     peachCtx.moveTo(36, 21);
     peachCtx.lineTo(21, 36);
     peachCtx.lineTo(51, 36);
     peachCtx.closePath();
     peachCtx.fill();
-    // Правый треугольник
+    
     peachCtx.beginPath();
     peachCtx.moveTo(84, 21);
     peachCtx.lineTo(69, 36);
     peachCtx.lineTo(99, 36);
     peachCtx.closePath();
     peachCtx.fill();
-    // Основание короны
+    
     peachCtx.fillRect(21, 36, 78, 6);
     
     images.peach = peachCanvas;
@@ -336,9 +382,6 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
-    } else if (type === 'grass') {
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, width, height);
     } else if (type === 'gift') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
@@ -379,7 +422,7 @@ let player = {
     height: CONFIG.player.height,
     velocityX: 0,
     velocityY: 0,
-    isOnGround: false,
+    isOnGround: true,
     facingRight: true,
     lives: CONFIG.player.lives,
     invincible: false,
@@ -387,18 +430,18 @@ let player = {
     isJumping: false
 };
 
-// Платформы (увеличиваем в 3 раза)
+// Платформы (островки обратно в нормальный размер)
 let platforms = [
     // Основная земля
-    {x: 0, y: CONFIG.world.groundLevel, width: 800, height: 50, type: 'ground'},
-    // Летающие островки (увеличиваем в 3 раза)
-    {x: 150, y: 280, width: 288, height: 96, type: 'platform'},     // было 96x32
-    {x: 320, y: 220, width: 288, height: 96, type: 'platform'},     // было 96x32
-    {x: 500, y: 280, width: 288, height: 96, type: 'platform'},     // было 96x32
-    {x: 650, y: 180, width: 192, height: 96, type: 'platform'}      // было 64x32
+    {x: 0, y: CONFIG.world.groundLevel, width: 800, height: 32, type: 'ground'},
+    // Летающие островки (нормальный размер)
+    {x: 150, y: 280, width: 96, height: 32, type: 'platform'},
+    {x: 320, y: 220, width: 96, height: 32, type: 'platform'},
+    {x: 500, y: 280, width: 96, height: 32, type: 'platform'},
+    {x: 650, y: 180, width: 64, height: 32, type: 'platform'}
 ];
 
-// Подарки (5 штук, счет от 1 до 5)
+// Подарки
 let gifts = [
     {x: 180, y: 240, width: 30, height: 30, collected: false, type: 'gift'},
     {x: 350, y: 180, width: 30, height: 30, collected: false, type: 'gift'},
@@ -407,24 +450,24 @@ let gifts = [
     {x: 750, y: 100, width: 30, height: 30, collected: false, type: 'gift'}
 ];
 
-let flag = {x: 750, y: 180, width: 40, height: 150, reached: false};
+// Флаг (низ соприкасается с землей)
+let flag = {x: 750, y: CONFIG.world.groundLevel - 150, width: 40, height: 150, reached: false};
 
-// Фоновые элементы (убираем кусты)
+// Фоновые элементы
 let clouds = [
     {x: 100, y: 60, width: 80, height: 40},
     {x: 350, y: 80, width: 100, height: 50},
     {x: 600, y: 40, width: 120, height: 60}
 ];
 
+// Горы (выше в 2 раза)
 let mountains = [
-    {x: -50, y: 250, width: 120, height: 80},
-    {x: 200, y: 270, width: 120, height: 80},
-    {x: 500, y: 260, width: 120, height: 80}
+    {x: -50, y: 150, width: 240, height: 200},
+    {x: 200, y: 170, width: 240, height: 200},
+    {x: 500, y: 160, width: 240, height: 200}
 ];
 
-// Убрали bushes (кусты)
-
-let score = 0; // Количество собранных подарков
+let score = 0;
 let gameOver = false;
 let gameWin = false;
 const keys = {};
@@ -448,12 +491,12 @@ restartButton.addEventListener('click', resetGame);
 function initGame() {
     player = {
         x: CONFIG.player.startX,
-        y: CONFIG.world.groundLevel - CONFIG.player.height, // Ставим на землю
+        y: CONFIG.world.groundLevel - CONFIG.player.height,
         width: CONFIG.player.width,
         height: CONFIG.player.height,
         velocityX: 0,
         velocityY: 0,
-        isOnGround: false,
+        isOnGround: true,
         facingRight: true,
         lives: CONFIG.player.lives,
         invincible: false,
@@ -467,10 +510,10 @@ function initGame() {
     gameOver = false;
     gameWin = false;
     backgroundOffset = 0;
+    birds.length = 0;
+    lastBirdTime = 0;
     
-    // Обновляем отображение счета
     updateScoreDisplay();
-    
     livesElement.textContent = '👑'.repeat(player.lives);
     messageElement.style.display = 'none';
     floatingMessages = [];
@@ -478,7 +521,6 @@ function initGame() {
     gameLoop();
 }
 
-// Функция для обновления отображения счета
 function updateScoreDisplay() {
     scoreElement.textContent = `${score}/${gifts.length}`;
 }
@@ -511,9 +553,9 @@ function update() {
         walkAnimationCounter++;
     }
     
-    // Прыжок (увеличиваем силу прыжка для большой принцессы)
+    // Прыжок
     if (keys['ArrowUp'] && player.isOnGround) {
-        player.velocityY = -CONFIG.player.jumpForce * 1.2; // Увеличиваем на 20%
+        player.velocityY = -CONFIG.player.jumpForce;
         player.isOnGround = false;
         player.isJumping = true;
     }
@@ -535,21 +577,23 @@ function update() {
         return;
     }
     
-    // Столкновение с платформами (учитываем большие размеры)
+    // Столкновение с платформами (более точная проверка)
     player.isOnGround = false;
     platforms.forEach(platform => {
         if (player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
-            player.y + player.height > platform.y &&
-            player.y + player.height < platform.y + platform.height + player.velocityY) {
+            player.y + player.height >= platform.y &&
+            player.y + player.height <= platform.y + 10) { // Узкая зона для "стояния"
             
+            // Корректировка позиции для точного стояния
             player.y = platform.y - player.height;
             player.velocityY = 0;
             player.isOnGround = true;
+            player.isJumping = false;
         }
     });
     
-    // Сбор подарков (корректируем высоту сбора для большой принцессы)
+    // Сбор подарков
     gifts.forEach((gift, index) => {
         if (!gift.collected &&
             player.x < gift.x + gift.width &&
@@ -558,17 +602,15 @@ function update() {
             player.y + player.height > gift.y) {
             
             gift.collected = true;
-            score++; // Увеличиваем на 1
-            updateScoreDisplay(); // Обновляем отображение
+            score++;
+            updateScoreDisplay();
             
-            // Показываем сообщение
             showFloatingMessage(
                 peachMessages[index % peachMessages.length], 
                 gift.x + gift.width/2, 
                 gift.y
             );
             
-            // Если собрали все 5 подарков
             if (score === gifts.length) {
                 messageElement.textContent = "🎉 Все подарки собраны! К флагу! 🎉";
                 messageElement.style.display = 'block';
@@ -614,23 +656,58 @@ function update() {
             floatingMessages.splice(i, 1);
         }
     }
+    
+    // Обновление птичек
+    const now = Date.now();
+    if (now - lastBirdTime > BIRD_INTERVAL) {
+        birds.push(createBird());
+        lastBirdTime = now;
+    }
+    
+    for (let i = birds.length - 1; i >= 0; i--) {
+        if (!birds[i].update()) {
+            birds.splice(i, 1);
+        }
+    }
 }
 
 function draw() {
     // Очистка экрана
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Фон
-    ctx.fillStyle = CONFIG.world.skyColor;
+    // Градиентное небо (от светло-голубого к белому)
+    const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    skyGradient.addColorStop(0, '#87CEEB');
+    skyGradient.addColorStop(0.6, '#B0E2FF');
+    skyGradient.addColorStop(1, '#FFFFFF');
+    
+    ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Солнце
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(700, 60, 30, 0, Math.PI * 2);
+    ctx.arc(700, 60, 40, 0, Math.PI * 2);
     ctx.fill();
     
-    // Горы
+    // Лучи солнца
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6;
+        ctx.beginPath();
+        ctx.moveTo(
+            700 + Math.cos(angle) * 40,
+            60 + Math.sin(angle) * 40
+        );
+        ctx.lineTo(
+            700 + Math.cos(angle) * 60,
+            60 + Math.sin(angle) * 60
+        );
+        ctx.stroke();
+    }
+    
+    // Горы (высокие)
     mountains.forEach(mountain => {
         if (sprites.background.mountains) {
             ctx.drawImage(
@@ -656,6 +733,15 @@ function draw() {
         }
     });
     
+    // Птички
+    birds.forEach(bird => {
+        bird.draw(ctx);
+    });
+    
+    // Коричневый фон под землей
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(0, CONFIG.world.groundLevel + 32, canvas.width, canvas.height - CONFIG.world.groundLevel - 32);
+    
     // Платформы
     platforms.forEach(platform => {
         if (platform.type === 'ground') {
@@ -671,22 +757,8 @@ function draw() {
                     );
                 }
             }
-            
-            // Трава сверху (в 5 раз больше)
-            if (sprites.tiles.grass) {
-                for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.grass.width) {
-                    // Рисуем траву в 5 раз больше
-                    ctx.drawImage(
-                        sprites.tiles.grass, 
-                        x, 
-                        platform.y - spriteSizes.grass.height/4, // Поднимаем выше
-                        spriteSizes.grass.width, 
-                        spriteSizes.grass.height/4 // Только верхняя часть
-                    );
-                }
-            }
         } else if (platform.type === 'platform' && sprites.tiles.platform) {
-            // Летающие островки (в 3 раза больше)
+            // Летающие островки
             for (let x = platform.x; x < platform.x + platform.width; x += spriteSizes.platform.width) {
                 ctx.drawImage(
                     sprites.tiles.platform, 
@@ -696,21 +768,10 @@ function draw() {
                     spriteSizes.platform.height
                 );
             }
-            
-            // Трава на платформах (в 5 раз больше)
-            if (sprites.tiles.grass) {
-                ctx.drawImage(
-                    sprites.tiles.grass, 
-                    platform.x, 
-                    platform.y - spriteSizes.grass.height/8,
-                    platform.width,
-                    spriteSizes.grass.height/8
-                );
-            }
         }
     });
     
-    // Подарки с анимацией парения
+    // Подарки
     gifts.forEach(gift => {
         if (!gift.collected && sprites.gifts.gift) {
             const floatOffset = Math.sin(Date.now() / 300 + gift.x * 0.1) * 5;
@@ -722,7 +783,6 @@ function draw() {
                 gift.height
             );
             
-            // Мигающий эффект для подарков
             if (Math.sin(Date.now() / 200) > 0) {
                 ctx.globalAlpha = 0.3;
                 ctx.fillStyle = '#FFFFFF';
@@ -732,7 +792,7 @@ function draw() {
         }
     });
     
-    // Флаг
+    // Флаг (низ на земле)
     if (sprites.gifts.flag) {
         ctx.drawImage(
             sprites.gifts.flag, 
@@ -743,22 +803,18 @@ function draw() {
         );
     }
     
-    // Игрок (принцесса Пич в 3 раза больше)
+    // Игрок (принцесса Пич)
     let playerSprite;
     if (!player.isOnGround) {
-        // Прыжок
         playerSprite = player.facingRight ? sprites.peach.jumpRight : sprites.peach.jumpLeft;
     } else if (player.velocityX !== 0) {
-        // Ходьба
         const walkFrame = Math.floor(walkAnimationCounter / WALK_ANIMATION_SPEED) % sprites.peach.walkRight.length;
         playerSprite = player.facingRight ? sprites.peach.walkRight[walkFrame] : sprites.peach.walkLeft[walkFrame];
     } else {
-        // Стояние
         playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.standLeft;
     }
     
     if (playerSprite && (!player.invincible || Math.floor(Date.now() / 100) % 2 === 0)) {
-        // Рисуем принцессу в 3 раза больше
         ctx.drawImage(
             playerSprite, 
             player.x, 
@@ -779,7 +835,6 @@ function draw() {
         ctx.translate(flag.x + flag.width, flag.y + 30);
         ctx.rotate(Math.sin(Date.now() / 200) * 0.3);
         
-        // Флаг победы
         ctx.fillStyle = '#FF69B4';
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -788,32 +843,29 @@ function draw() {
         ctx.closePath();
         ctx.fill();
         
-        // Корона на флаге победы
         ctx.fillStyle = '#FFD700';
-        // Центральный треугольник
         ctx.beginPath();
         ctx.moveTo(10, -30);
         ctx.lineTo(7, -25);
         ctx.lineTo(13, -25);
         ctx.closePath();
         ctx.fill();
-        // Левый треугольник
+        
         ctx.beginPath();
         ctx.moveTo(4, -28);
         ctx.lineTo(1, -23);
         ctx.lineTo(7, -23);
         ctx.closePath();
         ctx.fill();
-        // Правый треугольник
+        
         ctx.beginPath();
         ctx.moveTo(16, -28);
         ctx.lineTo(13, -23);
         ctx.lineTo(19, -23);
         ctx.closePath();
         ctx.fill();
-        // Основание короны
-        ctx.fillRect(1, -23, 18, 2);
         
+        ctx.fillRect(1, -23, 18, 2);
         ctx.restore();
     }
 }
@@ -831,7 +883,7 @@ function loseLife() {
         player.invincible = true;
         player.invincibleTimer = 120;
         player.x = CONFIG.player.startX;
-        player.y = CONFIG.world.groundLevel - CONFIG.player.height; // Ставим на землю
+        player.y = CONFIG.world.groundLevel - CONFIG.player.height;
         player.velocityX = 0;
         player.velocityY = 0;
     }

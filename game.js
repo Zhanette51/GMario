@@ -3,8 +3,8 @@ const CONFIG = {
     player: {
         startX: 50,
         startY: 250,
-        width: 40,  // Увеличим размер для лучшего отображения изображения
-        height: 60, // Рекомендуемый размер изображения 40x60 пикселей
+        width: 40,
+        height: 60,
         speed: 5,
         jumpForce: 15,
         lives: 3
@@ -40,7 +40,19 @@ const peachMessages = [
     "Вы самая лучшая! 🌸"
 ];
 
-// Объекты для хранения спрайтов
+// Объекты для хранения загруженных изображений
+const images = {
+    peach: null,
+    gift: null,
+    flag: null,
+    ground: null,
+    grass: null,
+    platform: null,
+    clouds: null,
+    background_mountains: null
+};
+
+// Спрайты для игры
 const sprites = {
     peach: {
         standRight: null,
@@ -60,103 +72,105 @@ let animationFrame = 0;
 let walkAnimationCounter = 0;
 const WALK_ANIMATION_SPEED = 8;
 
-// Функция загрузки спрайтов с прогрессом
+// Функция загрузки изображений
 function loadSprites() {
     let loadedCount = 0;
-    const totalSprites = 10;
+    const totalImages = 8; // Всего изображений для загрузки
     
     function updateProgress() {
         loadedCount++;
-        const percent = Math.round((loadedCount / totalSprites) * 100);
-        loadingElement.textContent = `Создаём королевство... ${percent}%`;
+        const percent = Math.round((loadedCount / totalImages) * 100);
+        loadingElement.textContent = `Загружаем королевство... ${percent}%`;
         
-        if (loadedCount === totalSprites) {
+        if (loadedCount === totalImages) {
             setTimeout(() => {
+                // После загрузки всех изображений создаем спрайты
+                createSpritesFromImages();
                 loadingElement.style.display = 'none';
                 initGame();
             }, 100);
         }
     }
     
-    // Пытаемся загрузить изображение игрока
-    loadingElement.textContent = "Загружаем изображение принцессы...";
+    // Массив изображений для загрузки
+    const imageFiles = [
+        { name: 'peach', path: 'images/peach.png' },
+        { name: 'gift', path: 'images/gift.png' },
+        { name: 'flag', path: 'images/flag.png' },
+        { name: 'ground', path: 'images/ground.png' },
+        { name: 'grass', path: 'images/grass.png' },
+        { name: 'platform', path: 'images/platform.png' },
+        { name: 'clouds', path: 'images/clouds.png' },
+        { name: 'background_mountains', path: 'images/background_mountains.png' }
+    ];
     
-    const playerImage = new Image();
-    playerImage.onload = function() {
-        // Если изображение загружено успешно, используем его
-        sprites.peach.standRight = playerImage;
-        sprites.peach.standLeft = createMirroredSprite(playerImage);
-        
-        // Для анимации используем то же изображение
-        sprites.peach.walkRight.push(playerImage);
-        sprites.peach.walkLeft.push(createMirroredSprite(playerImage));
-        
-        sprites.peach.jumpRight = playerImage;
-        sprites.peach.jumpLeft = createMirroredSprite(playerImage);
-        
-        updateProgress();
-        updateProgress(); // +2 для анимаций
-        updateProgress();
-        updateProgress();
-        
-        // Создаем остальные спрайты
-        createOtherSprites();
-    };
+    // Загружаем все изображения
+    imageFiles.forEach(imgData => {
+        const img = new Image();
+        img.onload = function() {
+            images[imgData.name] = img;
+            updateProgress();
+        };
+        img.onerror = function() {
+            console.warn(`Не удалось загрузить изображение: ${imgData.path}`);
+            // Создаем простой спрайт вместо изображения
+            createFallbackSprite(imgData.name);
+            updateProgress();
+        };
+        img.src = imgData.path;
+    });
+}
+
+// Создание спрайтов из загруженных изображений
+function createSpritesFromImages() {
+    // Принцесса Пич
+    if (images.peach) {
+        sprites.peach.standRight = images.peach;
+        sprites.peach.standLeft = createMirroredImage(images.peach);
+        sprites.peach.walkRight.push(images.peach);
+        sprites.peach.walkLeft.push(createMirroredImage(images.peach));
+        sprites.peach.jumpRight = images.peach;
+        sprites.peach.jumpLeft = createMirroredImage(images.peach);
+    } else {
+        createFallbackPeachSprites();
+    }
     
-    playerImage.onerror = function() {
-        // Если изображение не загрузилось, создаем программный спрайт
-        console.warn("Не удалось загрузить изображение игрока, создаем программный спрайт");
-        createProgrammaticSprites();
-        createOtherSprites();
-    };
+    // Блоки и платформы
+    if (images.ground) {
+        sprites.tiles.ground = images.ground;
+    } else {
+        sprites.tiles.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
+    }
     
-    // Пробуем загрузить изображение из разных мест
-    playerImage.src = 'images/peach.png';
+    if (images.grass) {
+        sprites.tiles.grass = images.grass;
+    } else {
+        sprites.tiles.grass = createSimpleSprite(32, 32, '#7CFC00', 'grass');
+    }
     
-    function createOtherSprites() {
-        // Блоки
-        sprites.tiles.ground = createSimpleSprite(32, 32, '#8B4513', 'brick');
-        updateProgress();
-        sprites.tiles.brick = createSimpleSprite(32, 32, '#C04000', 'brick');
-        updateProgress();
-        
-        // Подарок
-        const giftCanvas = document.createElement('canvas');
-        giftCanvas.width = 30;
-        giftCanvas.height = 30;
-        const giftCtx = giftCanvas.getContext('2d');
-        
-        giftCtx.fillStyle = '#FF4081';
-        giftCtx.fillRect(0, 0, 30, 30);
-        
-        giftCtx.fillStyle = '#FFD700';
-        giftCtx.fillRect(13, 0, 4, 30);
-        giftCtx.fillRect(0, 13, 30, 4);
-        
-        sprites.gifts.gift = giftCanvas;
-        updateProgress();
-        
-        // Флаг
-        const flagCanvas = document.createElement('canvas');
-        flagCanvas.width = 40;
-        flagCanvas.height = 150;
-        const flagCtx = flagCanvas.getContext('2d');
-        
-        flagCtx.fillStyle = '#8B4513';
-        flagCtx.fillRect(18, 0, 4, 150);
-        
-        flagCtx.fillStyle = '#FF69B4';
-        flagCtx.beginPath();
-        flagCtx.moveTo(22, 30);
-        flagCtx.lineTo(40, 20);
-        flagCtx.lineTo(22, 50);
-        flagCtx.closePath();
-        flagCtx.fill();
-        
-        sprites.gifts.flag = flagCanvas;
-        updateProgress();
-        
-        // Облако
+    if (images.platform) {
+        sprites.tiles.platform = images.platform;
+    } else {
+        sprites.tiles.platform = createSimpleSprite(32, 32, '#C04000', 'brick');
+    }
+    
+    // Подарки и флаг
+    if (images.gift) {
+        sprites.gifts.gift = images.gift;
+    } else {
+        sprites.gifts.gift = createSimpleSprite(30, 30, '#FF4081', 'gift');
+    }
+    
+    if (images.flag) {
+        sprites.gifts.flag = images.flag;
+    } else {
+        sprites.gifts.flag = createSimpleSprite(40, 150, '#FF69B4', 'flag');
+    }
+    
+    // Фон
+    if (images.clouds) {
+        sprites.background.clouds = images.clouds;
+    } else {
         const cloudCanvas = document.createElement('canvas');
         cloudCanvas.width = 80;
         cloudCanvas.height = 40;
@@ -165,75 +179,143 @@ function loadSprites() {
         cloudCtx.beginPath();
         cloudCtx.arc(40, 20, 20, 0, Math.PI * 2);
         cloudCtx.fill();
-        sprites.background.cloud = cloudCanvas;
-        updateProgress();
-        
-        // Куст
-        const bushCanvas = document.createElement('canvas');
-        bushCanvas.width = 60;
-        bushCanvas.height = 40;
-        const bushCtx = bushCanvas.getContext('2d');
-        bushCtx.fillStyle = '#228B22';
-        bushCtx.beginPath();
-        bushCtx.arc(30, 20, 20, 0, Math.PI * 2);
-        bushCtx.fill();
-        sprites.background.bush = bushCanvas;
-        updateProgress();
+        sprites.background.clouds = cloudCanvas;
     }
     
-    function createProgrammaticSprites() {
-        // Создаем программный спрайт принцессы
-        const peachCanvas = document.createElement('canvas');
-        peachCanvas.width = 40;
-        peachCanvas.height = 60;
-        const peachCtx = peachCanvas.getContext('2d');
-        
-        // Рисуем простую принцессу
-        peachCtx.fillStyle = '#FF69B4';
-        peachCtx.fillRect(10, 20, 20, 30); // Платье
-        
-        peachCtx.fillStyle = '#FFE4C4';
-        peachCtx.beginPath();
-        peachCtx.arc(20, 15, 10, 0, Math.PI * 2); // Голова
-        peachCtx.fill();
-        
-        peachCtx.fillStyle = '#FFD700';
-        // Корона с тремя треугольниками
-        peachCtx.beginPath();
-        peachCtx.moveTo(20, 5);  // Центральный
-        peachCtx.lineTo(15, 10);
-        peachCtx.lineTo(25, 10);
-        peachCtx.closePath();
-        peachCtx.fill();
-        
-        peachCtx.beginPath();
-        peachCtx.moveTo(12, 7);  // Левый
-        peachCtx.lineTo(7, 12);
-        peachCtx.lineTo(17, 12);
-        peachCtx.closePath();
-        peachCtx.fill();
-        
-        peachCtx.beginPath();
-        peachCtx.moveTo(28, 7);  // Правый
-        peachCtx.lineTo(23, 12);
-        peachCtx.lineTo(33, 12);
-        peachCtx.closePath();
-        peachCtx.fill();
-        
-        peachCtx.fillRect(7, 12, 26, 2); // Основание короны
-        
-        sprites.peach.standRight = peachCanvas;
-        sprites.peach.standLeft = createMirroredSprite(peachCanvas);
-        sprites.peach.walkRight.push(peachCanvas);
-        sprites.peach.walkLeft.push(createMirroredSprite(peachCanvas));
-        sprites.peach.jumpRight = peachCanvas;
-        sprites.peach.jumpLeft = createMirroredSprite(peachCanvas);
-        
-        updateProgress();
-        updateProgress();
-        updateProgress();
-        updateProgress();
+    if (images.background_mountains) {
+        sprites.background.mountains = images.background_mountains;
+    } else {
+        const mountainCanvas = document.createElement('canvas');
+        mountainCanvas.width = 120;
+        mountainCanvas.height = 80;
+        const mountainCtx = mountainCanvas.getContext('2d');
+        mountainCtx.fillStyle = '#8B4513';
+        mountainCtx.beginPath();
+        mountainCtx.moveTo(0, 80);
+        mountainCtx.lineTo(60, 0);
+        mountainCtx.lineTo(120, 80);
+        mountainCtx.closePath();
+        mountainCtx.fill();
+        sprites.background.mountains = mountainCanvas;
     }
+    
+    // Куст (у нас нет изображения, создаем программно)
+    const bushCanvas = document.createElement('canvas');
+    bushCanvas.width = 60;
+    bushCanvas.height = 40;
+    const bushCtx = bushCanvas.getContext('2d');
+    bushCtx.fillStyle = '#228B22';
+    bushCtx.beginPath();
+    bushCtx.arc(30, 20, 20, 0, Math.PI * 2);
+    bushCtx.fill();
+    sprites.background.bush = bushCanvas;
+}
+
+// Функция создания зеркального отражения изображения
+function createMirroredImage(originalImage) {
+    const canvas = document.createElement('canvas');
+    canvas.width = originalImage.width;
+    canvas.height = originalImage.height;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.translate(originalImage.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(originalImage, 0, 0);
+    
+    return canvas;
+}
+
+// Резервные спрайты (если изображения не загрузились)
+function createFallbackSprite(type) {
+    switch(type) {
+        case 'peach':
+            createFallbackPeachSprites();
+            break;
+        case 'gift':
+            images.gift = createSimpleSprite(30, 30, '#FF4081', 'gift');
+            break;
+        case 'flag':
+            images.flag = createSimpleSprite(40, 150, '#FF69B4', 'flag');
+            break;
+        case 'ground':
+            images.ground = createSimpleSprite(32, 32, '#8B4513', 'ground');
+            break;
+        case 'grass':
+            images.grass = createSimpleSprite(32, 32, '#7CFC00', 'grass');
+            break;
+        case 'platform':
+            images.platform = createSimpleSprite(32, 32, '#C04000', 'platform');
+            break;
+        case 'clouds':
+            const cloudCanvas = document.createElement('canvas');
+            cloudCanvas.width = 80;
+            cloudCanvas.height = 40;
+            const cloudCtx = cloudCanvas.getContext('2d');
+            cloudCtx.fillStyle = '#FFFFFF';
+            cloudCtx.beginPath();
+            cloudCtx.arc(40, 20, 20, 0, Math.PI * 2);
+            cloudCtx.fill();
+            images.clouds = cloudCanvas;
+            break;
+        case 'background_mountains':
+            const mountainCanvas = document.createElement('canvas');
+            mountainCanvas.width = 120;
+            mountainCanvas.height = 80;
+            const mountainCtx = mountainCanvas.getContext('2d');
+            mountainCtx.fillStyle = '#8B4513';
+            mountainCtx.beginPath();
+            mountainCtx.moveTo(0, 80);
+            mountainCtx.lineTo(60, 0);
+            mountainCtx.lineTo(120, 80);
+            mountainCtx.closePath();
+            mountainCtx.fill();
+            images.background_mountains = mountainCanvas;
+            break;
+    }
+}
+
+function createFallbackPeachSprites() {
+    // Создаем простую принцессу Пич
+    const peachCanvas = document.createElement('canvas');
+    peachCanvas.width = 40;
+    peachCanvas.height = 60;
+    const peachCtx = peachCanvas.getContext('2d');
+    
+    // Рисуем принцессу
+    peachCtx.fillStyle = '#FF69B4';
+    peachCtx.fillRect(10, 20, 20, 30); // Платье
+    
+    peachCtx.fillStyle = '#FFE4C4';
+    peachCtx.beginPath();
+    peachCtx.arc(20, 15, 10, 0, Math.PI * 2); // Голова
+    peachCtx.fill();
+    
+    // Корона с тремя треугольниками
+    peachCtx.fillStyle = '#FFD700';
+    peachCtx.beginPath();
+    peachCtx.moveTo(20, 5);
+    peachCtx.lineTo(15, 10);
+    peachCtx.lineTo(25, 10);
+    peachCtx.closePath();
+    peachCtx.fill();
+    
+    peachCtx.beginPath();
+    peachCtx.moveTo(12, 7);
+    peachCtx.lineTo(7, 12);
+    peachCtx.lineTo(17, 12);
+    peachCtx.closePath();
+    peachCtx.fill();
+    
+    peachCtx.beginPath();
+    peachCtx.moveTo(28, 7);
+    peachCtx.lineTo(23, 12);
+    peachCtx.lineTo(33, 12);
+    peachCtx.closePath();
+    peachCtx.fill();
+    
+    peachCtx.fillRect(7, 12, 26, 2); // Основание короны
+    
+    images.peach = peachCanvas;
 }
 
 function createSimpleSprite(width, height, color, type) {
@@ -244,7 +326,7 @@ function createSimpleSprite(width, height, color, type) {
     
     ctx.clearRect(0, 0, width, height);
     
-    if (type === 'brick') {
+    if (type === 'ground' || type === 'brick') {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         
@@ -252,20 +334,28 @@ function createSimpleSprite(width, height, color, type) {
         for (let x = 4; x < width; x += 8) {
             ctx.fillRect(x, 0, 2, height);
         }
+    } else if (type === 'grass') {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+    } else if (type === 'gift') {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(width/2 - 2, 0, 4, height);
+        ctx.fillRect(0, height/2 - 2, width, 4);
+    } else if (type === 'flag') {
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(width/2 - 3, 0, 6, height);
+        
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(width/2, 30);
+        ctx.lineTo(width, 20);
+        ctx.lineTo(width/2, 50);
+        ctx.closePath();
+        ctx.fill();
     }
-    
-    return canvas;
-}
-
-function createMirroredSprite(originalCanvas) {
-    const canvas = document.createElement('canvas');
-    canvas.width = originalCanvas.width;
-    canvas.height = originalCanvas.height;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.translate(originalCanvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(originalCanvas, 0, 0);
     
     return canvas;
 }
@@ -298,10 +388,10 @@ let player = {
 // Платформы
 let platforms = [
     {x: 0, y: CONFIG.world.groundLevel, width: 800, height: 50, type: 'ground'},
-    {x: 150, y: 280, width: 96, height: 32, type: 'brick'},
-    {x: 320, y: 220, width: 96, height: 32, type: 'brick'},
-    {x: 500, y: 280, width: 96, height: 32, type: 'brick'},
-    {x: 650, y: 180, width: 64, height: 32, type: 'brick'}
+    {x: 150, y: 280, width: 96, height: 32, type: 'platform'},
+    {x: 320, y: 220, width: 96, height: 32, type: 'platform'},
+    {x: 500, y: 280, width: 96, height: 32, type: 'platform'},
+    {x: 650, y: 180, width: 64, height: 32, type: 'platform'}
 ];
 
 // Подарки (5 штук, счет от 1 до 5)
@@ -314,10 +404,18 @@ let gifts = [
 ];
 
 let flag = {x: 750, y: 180, width: 40, height: 150, reached: false};
+
+// Фоновые элементы
 let clouds = [
     {x: 100, y: 60, width: 80, height: 40},
     {x: 350, y: 80, width: 100, height: 50},
     {x: 600, y: 40, width: 120, height: 60}
+];
+
+let mountains = [
+    {x: -50, y: 250, width: 120, height: 80},
+    {x: 200, y: 270, width: 120, height: 80},
+    {x: 500, y: 260, width: 120, height: 80}
 ];
 
 let bushes = [
@@ -532,10 +630,17 @@ function draw() {
     ctx.arc(700, 60, 30, 0, Math.PI * 2);
     ctx.fill();
     
+    // Горы
+    mountains.forEach(mountain => {
+        if (sprites.background.mountains) {
+            ctx.drawImage(sprites.background.mountains, mountain.x, mountain.y, mountain.width, mountain.height);
+        }
+    });
+    
     // Облака
     clouds.forEach(cloud => {
-        if (sprites.background.cloud) {
-            ctx.drawImage(sprites.background.cloud, cloud.x, cloud.y, cloud.width, cloud.height);
+        if (sprites.background.clouds) {
+            ctx.drawImage(sprites.background.clouds, cloud.x, cloud.y, cloud.width, cloud.height);
         }
     });
     
@@ -550,16 +655,27 @@ function draw() {
     platforms.forEach(platform => {
         if (platform.type === 'ground') {
             // Земля
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            if (sprites.tiles.ground) {
+                for (let x = platform.x; x < platform.x + platform.width; x += 32) {
+                    ctx.drawImage(sprites.tiles.ground, x, platform.y, 32, 32);
+                }
+            }
             
             // Трава сверху
-            ctx.fillStyle = '#7CFC00';
-            ctx.fillRect(platform.x, platform.y - 10, platform.width, 10);
-        } else if (platform.type === 'brick' && sprites.tiles.brick) {
-            // Кирпичные платформы
+            if (sprites.tiles.grass) {
+                for (let x = platform.x; x < platform.x + platform.width; x += 32) {
+                    ctx.drawImage(sprites.tiles.grass, x, platform.y - 10, 32, 20);
+                }
+            }
+        } else if (platform.type === 'platform' && sprites.tiles.platform) {
+            // Платформы
             for (let x = platform.x; x < platform.x + platform.width; x += 32) {
-                ctx.drawImage(sprites.tiles.brick, x, platform.y, 32, 32);
+                ctx.drawImage(sprites.tiles.platform, x, platform.y, 32, 32);
+            }
+            
+            // Трава на платформах
+            if (sprites.tiles.grass) {
+                ctx.drawImage(sprites.tiles.grass, platform.x, platform.y - 5, platform.width, 5);
             }
         }
     });
@@ -622,6 +738,32 @@ function draw() {
         ctx.lineTo(0, -40);
         ctx.closePath();
         ctx.fill();
+        
+        // Корона на флаге победы
+        ctx.fillStyle = '#FFD700';
+        // Центральный треугольник
+        ctx.beginPath();
+        ctx.moveTo(10, -30);
+        ctx.lineTo(7, -25);
+        ctx.lineTo(13, -25);
+        ctx.closePath();
+        ctx.fill();
+        // Левый треугольник
+        ctx.beginPath();
+        ctx.moveTo(4, -28);
+        ctx.lineTo(1, -23);
+        ctx.lineTo(7, -23);
+        ctx.closePath();
+        ctx.fill();
+        // Правый треугольник
+        ctx.beginPath();
+        ctx.moveTo(16, -28);
+        ctx.lineTo(13, -23);
+        ctx.lineTo(19, -23);
+        ctx.closePath();
+        ctx.fill();
+        // Основание короны
+        ctx.fillRect(1, -23, 18, 2);
         
         ctx.restore();
     }

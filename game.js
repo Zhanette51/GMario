@@ -840,7 +840,7 @@ function update() {
                 messageElement.style.display = 'block';
                 setTimeout(() => {
                     messageElement.style.display = 'none';
-                }, 3000);
+                }, 2000);
             }
         }
     });

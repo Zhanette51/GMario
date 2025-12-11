@@ -1215,7 +1215,7 @@ function showFloatingMessage(text, x, y) {
         x: x,
         y: y,
         text: text,
-        life: 100,
+        life: 180,
         velocityY: -2,
         opacity: 1,
         update: function() {

@@ -99,13 +99,13 @@ const restartButton = document.getElementById('restartButton');
 // Сообщения для принцессы Пич
 const peachMessages = [
     "Пусть сбывается всё задуманное! 👑",
-    "Любимая, ценная, единственная! 🏡",
-    "Всех высот. Ты этого достойна! 🏰",
+    "Пусть всё получается, как мечтается! 💖",
+    "Напоминание: ты любима всем окружением! ✨",
     "Дальше — лучше! ❤️",
     "Мудрейшая! 🦉",
-    "Напоминание: ты любима всем окружением! ✨",
+    "Всех высот. Ты этого достойна! 🏰",
+    "Любимая, ценная, единственная! 🏡",
     "Твой внутренний свет непобедим! ☀️",
-    "Пусть всё получается, как мечтается! 💖",
     "Твоя сила в доброте! 💪",
     "Твоя улыбка — твоя сила! 🌸"
 ];
@@ -724,13 +724,6 @@ function updateScoreDisplay() {
 }
 
 function gameLoop() {
-    if (gameOver || gameWin) {
-        if (gameWin) {
-            showWinMessage();
-        }
-        return;
-    }
-    
     update();
     draw();
     animationFrame++;
@@ -738,6 +731,11 @@ function gameLoop() {
 }
 
 function update() {
+    // Если игра окончена или выиграна, не обновляем логику
+    if (gameOver || gameWin) {
+        return;
+    }
+    
     // Управление
     player.velocityX = 0;
     if (keys['ArrowLeft']) {
@@ -855,6 +853,7 @@ function update() {
         flag.reached = true;
         if (score === gifts.length) {
             gameWin = true;
+            showWinMessage();
         } else {
             messageElement.textContent = `Сначала собери все подарки! (${score}/${gifts.length})`;
             messageElement.style.display = 'block';
@@ -1066,7 +1065,7 @@ function draw() {
         const walkFrame = Math.floor(walkAnimationCounter / WALK_ANIMATION_SPEED) % sprites.peach.walkRight.length;
         playerSprite = player.facingRight ? sprites.peach.walkRight[walkFrame] : sprites.peach.walkLeft[walkFrame];
     } else {
-        playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.jumpLeft;
+        playerSprite = player.facingRight ? sprites.peach.standRight : sprites.peach.standLeft;
     }
     
     if (playerSprite && (!player.invincible || Math.floor(Date.now() / 100) % 2 === 0)) {
@@ -1203,6 +1202,11 @@ function showWinMessage() {
         <div style="margin-top: 20px; font-size: 0.7em;">Нажми R или кнопку для новой игры</div>
     `;
     messageElement.style.display = 'block';
+    
+    // Автоматически скрыть сообщение через 3 секунды
+    setTimeout(() => {
+        messageElement.style.display = 'none';
+    }, 3000);
 }
 
 function showMessage(text) {
@@ -1215,13 +1219,13 @@ function showFloatingMessage(text, x, y) {
         x: x,
         y: y,
         text: text,
-        life: 180,
+        life: 180, // 180 кадров = 3 секунды при 60 FPS
         velocityY: -2,
         opacity: 1,
         update: function() {
             this.y += this.velocityY;
             this.life--;
-            this.opacity = this.life / 100;
+            this.opacity = this.life / 180;
         },
         draw: function(ctx) {
             ctx.save();

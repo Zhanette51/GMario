@@ -1205,7 +1205,7 @@ function showWinMessage() {
     // Автоматически скрыть сообщение через 3 секунды
     setTimeout(() => {
         messageElement.style.display = 'none';
-    }, 4000);
+    }, 5000);
 }
 
 function showMessage(text) {

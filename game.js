@@ -724,12 +724,6 @@ function updateScoreDisplay() {
 }
 
 function gameLoop() {
-    if (gameOver || gameWin) {
-        if (gameWin) {
-            showWinMessage();
-        }
-        return;
-    }
     
     update();
     draw();
@@ -835,13 +829,13 @@ function update() {
                 gift.y
             );
             
-            if (score === gifts.length) {
-                messageElement.textContent = "🎉 Все подарки собраны! К флагу! 🎉";
-                messageElement.style.display = 'block';
-                setTimeout(() => {
-                    messageElement.style.display = 'none';
-                }, 2000);
-            }
+           if (score === gifts.length) {
+    messageElement.textContent = "🎉 Все подарки собраны! К флагу! 🎉";
+    messageElement.style.display = 'block';
+    setTimeout(() => {
+        messageElement.style.display = 'none';
+    }, 3000);  // Было 2000
+}
         }
     });
     
@@ -1203,6 +1197,11 @@ function showWinMessage() {
         <div style="margin-top: 20px; font-size: 0.7em;">Нажми R или кнопку для новой игры</div>
     `;
     messageElement.style.display = 'block';
+    
+    // Автоматически скрыть сообщение через 3 секунды
+    setTimeout(() => {
+        messageElement.style.display = 'none';
+    }, 3000);
 }
 
 function showMessage(text) {
@@ -1215,7 +1214,7 @@ function showFloatingMessage(text, x, y) {
         x: x,
         y: y,
         text: text,
-        life: 100,
+        life: 180,
         velocityY: -2,
         opacity: 1,
         update: function() {
